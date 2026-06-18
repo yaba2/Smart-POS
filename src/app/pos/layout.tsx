@@ -2,6 +2,7 @@ import { getSession } from "@/lib/session";
 import { getSettings } from "@/actions/settings";
 import { PosHeader } from "@/components/pos/pos-header";
 import { PWAInstallPrompt } from "@/components/pwa-install";
+import { PWAAutoLogout } from "@/components/pwa-auto-logout";
 
 export default async function PosLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -22,6 +23,7 @@ export default async function PosLayout({ children }: { children: React.ReactNod
       />
       <main className="flex-1 overflow-hidden">{children}</main>
       <PWAInstallPrompt />
+      <PWAAutoLogout />
     </div>
   );
 }

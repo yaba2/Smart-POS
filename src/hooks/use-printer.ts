@@ -101,21 +101,25 @@ export function usePrinter(options: UsePrinterOptions = {}): UsePrinterReturn {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const intentionalDisconnectRef = useRef(false);
+  const onStatusChangeRef = useRef(onStatusChange);
+  const onJobUpdateRef = useRef(onJobUpdate);
+  onStatusChangeRef.current = onStatusChange;
+  onJobUpdateRef.current = onJobUpdate;
 
   // Computed
   const isConnected = status === "connected";
   const pendingJobs = printQueue.filter(j => j.status === "pending" || j.status === "printing");
   const failedJobs = printQueue.filter(j => j.status === "failed");
 
-  // Update status callback
+  // Update status callback — use ref to avoid firing on every render
   useEffect(() => {
-    onStatusChange?.(status);
-  }, [status, onStatusChange]);
+    onStatusChangeRef.current?.(status);
+  }, [status]);
 
-  // Update queue callback
+  // Update queue callback — use ref to avoid firing on every render
   useEffect(() => {
-    onJobUpdate?.(printQueue);
-  }, [printQueue, onJobUpdate]);
+    onJobUpdateRef.current?.(printQueue);
+  }, [printQueue]);
 
   /**
    * Connect to print server

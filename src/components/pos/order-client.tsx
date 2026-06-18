@@ -173,11 +173,16 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const [modifierSelections, setModifierSelections] = useState<Record<string, string[]>>({}); // groupId → selected item ids
 
   // Printer integration
+  const printerWasConnected = useRef(false);
   const printer = usePrinter({
     autoConnect: true,
     onStatusChange: (status) => {
-      if (status === "error") {
+      if (status === "connected") {
+        printerWasConnected.current = true;
+      }
+      if (status === "error" && printerWasConnected.current) {
         toast({ title: "Printer connection lost", variant: "destructive" });
+        printerWasConnected.current = false;
       }
     },
   });
