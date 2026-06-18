@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Printer" ADD COLUMN     "connectionType" TEXT NOT NULL DEFAULT 'NETWORK',
+ADD COLUMN     "port" INTEGER DEFAULT 9100;

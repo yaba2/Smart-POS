@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SUPERVISOR
+  CASHIER
+  WAITER
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  WAITING_PAYMENT
+}
+
+enum OrderStatus {
+  OPEN
+  SENT
+  WAITING_PAYMENT
+  COMPLETED
+  CANCELLED
+}
+
+
+enum ShiftType {
+  MORNING
+  EVENING
+}
+
+enum Permission {
+  // Order Management
+  CANCEL_ORDER
+  MODIFY_SENT_ORDERS
+  PROCESS_REFUND
+  VIEW_ALL_ORDERS
+  OVERRIDE_PRICES
+
+  // Billing & Payments
+  SETTLE_BILL
+  APPLY_DISCOUNT
+  SPLIT_BILL
+
+  // Reports & Analytics
+  VIEW_REPORTS
+  VIEW_SHIFT_REPORTS
+  EXPORT_REPORTS
+
+  // Shift Management
+  OPEN_SHIFT
+  CLOSE_SHIFT
+  VIEW_SHIFT_HISTORY
+
+  // User Management
+  MANAGE_USERS
+  MANAGE_ROLES
+
+  // Menu & Inventory
+  MANAGE_MENU
+  MANAGE_CATEGORIES
+  MANAGE_MODIFIERS
+  UPDATE_INVENTORY
+
+  // Tables & Floor
+  MANAGE_TABLES
+  RESERVE_TABLES
+
+  // System Settings
+  MANAGE_SETTINGS
+  MANAGE_TAX_RATES
+  CONFIGURE_PRINTERS
+
+  // Admin
+  VIEW_AUDIT_LOG
+  BACKUP_DATA
+}
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  role        Role         @default(WAITER)
+  pin         String?
+  username    String?      @unique
+  password    String?
+  active      Boolean      @default(true)
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  orders      Order[]
+  shifts      Shift[]
+}
+
+model Table {
+  id        String      @id @default(cuid())
+  name      String
+  floor     String?
+  status    TableStatus @default(AVAILABLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  orders    Order[]
+}
+
+model Category {
+  id              String                  @id @default(cuid())
+  name            String
+  description     String?
+  sortOrder       Int                     @default(0)
+  printer         String?                 // Printer destination: KITCHEN, BAR, CASHIER, etc.
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  items           MenuItem[]
+  modifierGroups  CategoryModifierGroup[]
+}
+
+model MenuItem {
+  id              String                  @id @default(cuid())
+  name            String
+  price           Float
+  description     String?
+  image           String?                 // URL to item image
+  available       Boolean                 @default(true)
+  categoryId      String
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  category        Category                @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
+  options         MenuItemOption[]        // Topping/add-on options
+  modifierGroups  MenuItemModifierGroup[] // Accompaniments & extras
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  tableId       String
+  waiterId      String
+  status        OrderStatus   @default(OPEN)
+  total         Float         @default(0)
+  paidAmount    Float         @default(0)
+  notes         String?
+  paymentMethod String?
+  paidAt        DateTime?
+  sentAt        DateTime?
+  cancelledAt   DateTime?     // When order was cancelled (to track pre/post kitchen cancellation)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  table         Table         @relation(fields: [tableId], references: [id])
+  waiter        User          @relation(fields: [waiterId], references: [id])
+  orderItems    OrderItem[]
+  payments      Payment[]
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  shiftId       String?
+  amount        Float
+  method        String
+  createdAt     DateTime      @default(now())
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shift         Shift?        @relation(fields: [shiftId], references: [id])
+}
+
+model MenuItemOption {
+  id          String   @id @default(cuid())
+  menuItemId  String
+  name        String   // e.g., "Side", "Size", "Toppings"
+  choices     String[] // JSON array of choices like ["Chips", "Rice", "Salad"]
+  price       Float    @default(0) // Additional price for this option
+  required    Boolean  @default(false)
+  multiple    Boolean  @default(false) // Allow multiple selections
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+}
+
+// Modifier Groups: reusable groups of accompaniments or extra charges
+// Type: "ACCOMPANIMENT" (pick one, e.g. chips/rice/salad) or "EXTRA" (add-ons with price)
+model ModifierGroup {
+  id          String         @id @default(cuid())
+  name        String         // e.g. "Accompanied With", "Extra Charges"
+  type        String         @default("ACCOMPANIMENT") // ACCOMPANIMENT | EXTRA
+  required    Boolean        @default(false)
+  multiple    Boolean        @default(false) // allow selecting multiple items
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  items       ModifierItem[]
+  categories  CategoryModifierGroup[]
+  menuItems   MenuItemModifierGroup[]
+}
+
+model ModifierItem {
+  id              String        @id @default(cuid())
+  modifierGroupId String
+  name            String        // e.g. "Chips", "Extra Shot"
+  price           Float         @default(0) // 0 = free, >0 = charged
+  available       Boolean       @default(true)
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+}
+
+// Assign modifier groups to whole categories
+model CategoryModifierGroup {
+  categoryId      String
+  modifierGroupId String
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  @@id([categoryId, modifierGroupId])
+}
+
+// Assign modifier groups to specific menu items (overrides category-level)
+model MenuItemModifierGroup {
+  menuItemId      String
+  modifierGroupId String
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  @@id([menuItemId, modifierGroupId])
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int      @default(1)
+  price      Float
+  notes      String?
+  options    String?  // JSON: { "Side": "Chips", "Size": "Large" }
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Shift {
+  id          String     @id @default(cuid())
+  userId      String
+  shiftType   ShiftType  @default(MORNING)
+  openedAt    DateTime   @default(now())
+  closedAt    DateTime?
+  openingCash Float      @default(0)
+  closingCash Float?
+  notes       String?
+  user        User       @relation(fields: [userId], references: [id])
+  payments    Payment[]
+}
+
+model Printer {
+  id             String   @id @default(cuid())
+  name           String   // e.g., "Kitchen Printer", "Bar Printer"
+  destination    String   // KITCHEN, BAR, BILL
+  connectionType String   @default("NETWORK") // NETWORK or USB
+  ipAddress      String?  // Network printer IP (for NETWORK type)
+  port           Int?     @default(9100) // Network printer port (default 9100)
+  isDefault      Boolean  @default(false)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PaymentMethodConfig {
+  id       String  @id @default(cuid())
+  name     String  // e.g., "Cash", "Credit Card", "Mobile Money"
+  code     String  @unique // e.g., "CASH", "CARD", "MOMO"
+  icon     String? // Lucide icon name
+  color    String? // Color code
+  active   Boolean @default(true)
+  sortOrder Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Settings {
+  id             String  @id @default(cuid())
+  restaurantName String  @default("Smart POS")
+  logo           String?
+  currency       String  @default("USD")
+  currencySymbol String  @default("$")
+  tax            Float   @default(0)
+  receiptHeader  String?
+  receiptFooter  String?
+  address        String?
+  phone          String?
+}
