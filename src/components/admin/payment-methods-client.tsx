@@ -82,7 +82,7 @@ export function PaymentMethodsClient({ methods: initialMethods }: { methods: Pay
     if (!editingMethod) return;
     const result = await updatePaymentMethod(editingMethod.id, {
       name: editingMethod.name,
-      icon: editingMethod.icon,
+      icon: editingMethod.icon || undefined,
       color: editingMethod.color,
       active: editingMethod.active,
     });
