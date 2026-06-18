@@ -82,7 +82,7 @@ interface OrderItem {
   price: number;
   notes: string | null;
   options: string | null; // JSON: { "Accompanied With": "Chips", "Extras": "Extra Shot (+$0.50)" }
-  menuItem: MenuItem & { category: { name: string } };
+  menuItem: MenuItem & { category: { name: string; printer: string | null } };
 }
 
 interface Order {
