@@ -77,9 +77,10 @@ interface UsePrinterReturn {
  * Connects to the Windows print server via WebSocket
  */
 export function usePrinter(options: UsePrinterOptions = {}): UsePrinterReturn {
+  const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
   const {
     printServerIp = typeof window !== "undefined" ? window.location.hostname : "localhost",
-    printServerPort = 9090,
+    printServerPort = isHttps ? 9091 : 9090,
     autoConnect = true,
     onStatusChange,
     onJobUpdate,
@@ -140,7 +141,8 @@ export function usePrinter(options: UsePrinterOptions = {}): UsePrinterReturn {
     setError(null);
 
     try {
-      const ws = new WebSocket(`ws://${targetIp}:${printServerPort}`);
+      const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${protocol}://${targetIp}:${printServerPort}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
