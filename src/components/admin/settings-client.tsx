@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Save, Store, DollarSign, Receipt, ImageIcon, AlignCenter, Eye } from "lucide-react";
+import { Save, Store, DollarSign, Receipt, ImageIcon, AlignCenter, Eye, Printer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Settings {
@@ -23,6 +23,7 @@ interface Settings {
   receiptFooter: string | null;
   address: string | null;
   phone: string | null;
+  printServerIp: string | null;
 }
 
 interface SettingsClientProps {
@@ -41,6 +42,7 @@ export function SettingsClient({ settings }: SettingsClientProps) {
     phone: settings.phone || "",
     receiptHeader: settings.receiptHeader || "",
     receiptFooter: settings.receiptFooter || "",
+    printServerIp: settings.printServerIp || "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +62,7 @@ export function SettingsClient({ settings }: SettingsClientProps) {
         phone: form.phone || undefined,
         receiptHeader: form.receiptHeader || undefined,
         receiptFooter: form.receiptFooter || undefined,
+        printServerIp: form.printServerIp || undefined,
       });
       toast({ title: "Settings saved successfully" });
       router.refresh();
@@ -133,6 +136,29 @@ export function SettingsClient({ settings }: SettingsClientProps) {
                 <Label>Tax Rate (%)</Label>
                 <Input type="number" min="0" max="100" step="0.1" value={form.tax} onChange={set("tax")} placeholder="8" />
                 <p className="text-xs text-gray-400">Enter 0 for no tax</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Print Server */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2 text-gray-600">
+                <Printer className="w-4 h-4" /> Print Server
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Print Server IP Address</Label>
+                <Input
+                  value={form.printServerIp}
+                  onChange={set("printServerIp")}
+                  placeholder="192.168.1.100"
+                />
+                <p className="text-xs text-gray-400">
+                  Local IP of the computer running the print server (e.g. <code>192.168.1.100</code>).
+                  Run <code>ipconfig</code> on that PC to find it. Leave blank to use auto-detect.
+                </p>
               </div>
             </CardContent>
           </Card>

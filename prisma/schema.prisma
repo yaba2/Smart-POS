@@ -287,4 +287,5 @@ model Settings {
   receiptFooter  String?
   address        String?
   phone          String?
+  printServerIp  String?
 }

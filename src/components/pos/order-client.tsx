@@ -142,9 +142,10 @@ interface OrderClientProps {
   permissions: string[];
   paymentMethods: PaymentMethodConfig[];
   receiptSettings?: ReceiptSettings;
+  printServerIp?: string;
 }
 
-export function OrderClient({ order, menu, currencySymbol, taxRate, permissions, paymentMethods, receiptSettings }: OrderClientProps) {
+export function OrderClient({ order, menu, currencySymbol, taxRate, permissions, paymentMethods, receiptSettings, printServerIp }: OrderClientProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState(menu[0]?.id || "");
   const [orderItems, setOrderItems] = useState<OrderItem[]>(order.orderItems);
@@ -176,6 +177,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const printerWasConnected = useRef(false);
   const printer = usePrinter({
     autoConnect: true,
+    printServerIp,
     onStatusChange: (status) => {
       if (status === "connected") {
         printerWasConnected.current = true;

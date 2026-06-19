@@ -32,6 +32,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         receiptHeader: settings.receiptHeader || undefined,
         receiptFooter: settings.receiptFooter || undefined,
       }}
+      printServerIp={settings.printServerIp || undefined}
     />
   );
 }

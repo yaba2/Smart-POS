@@ -28,6 +28,7 @@ export async function updateSettings(data: {
   receiptFooter?: string;
   address?: string;
   phone?: string;
+  printServerIp?: string;
 }) {
   const existing = await prisma.settings.findFirst();
   let settings;
