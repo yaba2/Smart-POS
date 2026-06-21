@@ -156,6 +156,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [partialAmount, setPartialAmount] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState(order.status);
   const [livePaidAmount, setLivePaidAmount] = useState(order.paidAmount);
   // IDs of items that were already sent to kitchen when this page loaded
@@ -548,7 +549,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("payment");
     try {
-      const result = await completePayment(order.id, selectedPayment);
+      const result = await completePayment(order.id, selectedPayment, customerName.trim() || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -642,7 +643,8 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
         Array.from(selectedItems),
         order.waiter.id,
         "settle",
-        selectedPayment
+        selectedPayment,
+        customerName.trim() || undefined
       );
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
@@ -676,7 +678,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("partial");
     try {
-      const result = await recordPartialPayment(order.id, selectedPayment, amount);
+      const result = await recordPartialPayment(order.id, selectedPayment, amount, customerName.trim() || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -1190,6 +1192,18 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
               </div>
             </div>
 
+            {/* Customer Name */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Customer Name</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Optional — type customer name"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+              />
+            </div>
+
             {/* Partial Payment Toggle */}
             <div className="mb-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -1311,6 +1325,18 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
                 <span>Total</span>
                 <span className="text-orange-500">{symbol}{selectedTotal.toFixed(2)}</span>
               </div>
+            </div>
+
+            {/* Customer Name */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Customer Name</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Optional — type customer name"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
+              />
             </div>
 
             <Button

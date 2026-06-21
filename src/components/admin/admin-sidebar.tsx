@@ -17,6 +17,8 @@ import {
   BarChart3,
   Printer,
   CreditCard,
+  Wallet,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +37,8 @@ const allNavItems = [
   { href: "/admin/printers", icon: Printer, label: "Printers", permission: "MANAGE_SETTINGS" },
   { href: "/admin/payment-methods", icon: CreditCard, label: "Payment Methods", permission: "MANAGE_SETTINGS" },
   { href: "/admin/reports", icon: BarChart3, label: "Reports", permission: "VIEW_REPORTS" },
+  { href: "/admin/expenses", icon: Wallet, label: "Expenses", permission: "MANAGE_EXPENSES" },
+  { href: "/admin/suppliers", icon: Truck, label: "Suppliers", permission: "MANAGE_EXPENSES" },
   { href: "/admin/settings", icon: Settings, label: "Settings", permission: "MANAGE_SETTINGS" },
 ];
 

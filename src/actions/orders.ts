@@ -156,7 +156,7 @@ export async function printBill(orderId: string) {
   return { success: true };
 }
 
-export async function completePayment(orderId: string, paymentMethod: string) {
+export async function completePayment(orderId: string, paymentMethod: string, customerName?: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { table: true },
@@ -182,7 +182,13 @@ export async function completePayment(orderId: string, paymentMethod: string) {
 
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: OrderStatus.COMPLETED, paymentMethod, paidAt: new Date(), paidAmount: order.total },
+    data: {
+      status: OrderStatus.COMPLETED,
+      paymentMethod,
+      paidAt: new Date(),
+      paidAmount: order.total,
+      customerName: customerName || null,
+    },
   });
 
   const otherOrders = await prisma.order.count({
@@ -330,7 +336,8 @@ export async function splitBill(
   itemIds: string[],
   waiterId: string,
   action: "print" | "settle",
-  paymentMethod?: string
+  paymentMethod?: string,
+  customerName?: string
 ) {
   const originalOrder = await prisma.order.findUnique({
     where: { id: originalOrderId },
@@ -357,6 +364,7 @@ export async function splitBill(
       paidAmount: action === "settle" ? selectedTotal : 0,
       paymentMethod: action === "settle" ? (paymentMethod ?? "CASH") : null,
       paidAt: action === "settle" ? new Date() : null,
+      customerName: action === "settle" ? (customerName || null) : null,
     },
   });
 
@@ -420,7 +428,8 @@ export async function splitBill(
 export async function recordPartialPayment(
   orderId: string,
   paymentMethod: string,
-  amount: number
+  amount: number,
+  customerName?: string
 ) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -454,6 +463,7 @@ export async function recordPartialPayment(
         paymentMethod,
         paidAt: new Date(),
         paidAmount: order.total,
+        customerName: customerName || null,
       },
     });
 

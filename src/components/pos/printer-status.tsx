@@ -175,7 +175,7 @@ export function PrinterStatusPanel({ printServerIp, onConnectionChange }: Printe
             {/* Connection Settings */}
             <div className="pt-2 border-t">
               <p className="text-xs text-gray-500">
-                Print Server: ws://{printServerIp || "localhost"}:9100
+                Print Server: ws://{printServerIp || "localhost"}:9090
               </p>
             </div>
           </div>

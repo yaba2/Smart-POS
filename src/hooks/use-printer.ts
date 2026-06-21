@@ -142,7 +142,9 @@ export function usePrinter(options: UsePrinterOptions = {}): UsePrinterReturn {
 
     try {
       const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${protocol}://${targetIp}:${printServerPort}`);
+      const url = `${protocol}://${targetIp}:${printServerPort}`;
+      console.log(`[Printer] Connecting to ${url}`);
+      const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {

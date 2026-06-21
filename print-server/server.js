@@ -1,20 +1,20 @@
 /**
- * Smart POS - WebSocket Print Server
+ * Smart POS - Local WebSocket Print Server
  * Supports both USB (Windows spooler) and Network (TCP) thermal printers.
+ *
+ * For local use only: listens on ws://localhost:9090 (plain WebSocket).
+ * This avoids all SSL certificate issues when the POS app is opened via http://.
  *
  * For USB printers: uses Windows "copy /b" to send raw ESC/POS bytes to the printer.
  * For Network printers: connects via TCP socket directly.
  */
 
 const WebSocket = require("ws");
-const https = require("https");
 const http = require("http");
 const net = require("net");
 const { exec } = require("child_process");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
-const { execSync } = require("child_process");
 
 // ── Configuration ──────────────────────────────────────────────────────────────
 // For each destination set EITHER:
@@ -48,11 +48,7 @@ const PRINTER_CONFIG = {
   },
 };
 
-const WS_PORT     = parseInt(process.env.PRINT_SERVER_PORT     || "9090"); // plain ws://
-const WSS_PORT    = parseInt(process.env.PRINT_SERVER_WSS_PORT || "9091"); // secure wss://
-const CERT_DIR    = path.join(__dirname, "certs");
-const CERT_FILE   = path.join(CERT_DIR, "cert.pem");
-const KEY_FILE    = path.join(CERT_DIR, "key.pem");
+const WS_PORT = parseInt(process.env.PRINT_SERVER_PORT || "9090"); // plain ws://
 
 // ── Job Queue ──────────────────────────────────────────────────────────────────
 const jobQueue = new Map(); // jobId → { jobId, destination, commands, status, attempts, error }
@@ -68,29 +64,7 @@ function logPrinterConfig() {
   });
 }
 
-function ensureSelfSignedCert() {
-  if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) return;
-  fs.mkdirSync(CERT_DIR, { recursive: true });
-  console.log("[Print Server] Generating self-signed certificate...");
-  try {
-    execSync(
-      `powershell -Command "$cert = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\\CurrentUser\\My' -NotAfter (Get-Date).AddYears(10); $pwd = ConvertTo-SecureString -String 'printserver' -Force -AsPlainText; Export-PfxCertificate -Cert $cert -FilePath '${CERT_DIR}\\cert.pfx' -Password $pwd"`,
-      { stdio: "inherit" }
-    );
-    // Convert pfx to pem using openssl if available, otherwise use fallback
-    execSync(
-      `openssl pkcs12 -in "${CERT_DIR}\\cert.pfx" -nocerts -nodes -out "${KEY_FILE}" -passin pass:printserver && openssl pkcs12 -in "${CERT_DIR}\\cert.pfx" -nokeys -out "${CERT_FILE}" -passin pass:printserver`,
-      { stdio: "inherit", shell: "cmd.exe" }
-    );
-    console.log("[Print Server] Certificate generated.");
-  } catch (e) {
-    console.warn("[Print Server] Could not generate cert via PowerShell/OpenSSL:", e.message);
-    console.warn("[Print Server] WSS will not be available. Use plain ws:// on port", WS_PORT);
-  }
-}
-
 function startServer() {
-  // ── Plain WebSocket (ws://) on WS_PORT ─────────────────────────────────────
   const plainServer = http.createServer();
   const wss = new WebSocket.Server({ server: plainServer });
 
@@ -104,33 +78,10 @@ function startServer() {
   });
 
   plainServer.listen(WS_PORT, () => {
-    console.log(`[Print Server] ws://  listening on port ${WS_PORT}`);
+    console.log(`[Print Server] ws:// listening on port ${WS_PORT}`);
   });
 
   setupHandlers(wss);
-
-  // ── Secure WebSocket (wss://) on WSS_PORT ──────────────────────────────────
-  ensureSelfSignedCert();
-  if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) {
-    try {
-      const httpsServer = https.createServer({
-        cert: fs.readFileSync(CERT_FILE),
-        key:  fs.readFileSync(KEY_FILE),
-      });
-      const wssSecure = new WebSocket.Server({ server: httpsServer });
-      setupHandlers(wssSecure);
-
-      httpsServer.on("error", (err) => {
-        console.warn("[Print Server] WSS error:", err.message);
-      });
-      httpsServer.listen(WSS_PORT, () => {
-        console.log(`[Print Server] wss:// listening on port ${WSS_PORT}`);
-        console.log(`[Print Server] For HTTPS sites (Vercel), use wss://<your-ip>:${WSS_PORT}`);
-      });
-    } catch (e) {
-      console.warn("[Print Server] Could not start WSS server:", e.message);
-    }
-  }
 
   // Auto-detect printers and log config
   autoDetectWindowsPrinter().then(() => logPrinterConfig());

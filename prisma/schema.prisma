@@ -35,6 +35,19 @@ enum ShiftType {
   EVENING
 }
 
+enum ExpenseCategory {
+  FOOD
+  DRINKS
+  SUPPLIES
+  SALARIES
+  RENT
+  UTILITIES
+  MAINTENANCE
+  MARKETING
+  TRANSPORT
+  OTHER
+}
+
 enum Permission {
   // Order Management
   CANCEL_ORDER
@@ -52,6 +65,9 @@ enum Permission {
   VIEW_REPORTS
   VIEW_SHIFT_REPORTS
   EXPORT_REPORTS
+
+  // Expenses
+  MANAGE_EXPENSES
 
   // Shift Management
   OPEN_SHIFT
@@ -95,6 +111,7 @@ model User {
   updatedAt   DateTime     @updatedAt
   orders      Order[]
   shifts      Shift[]
+  expenses    Expense[]
 }
 
 model Table {
@@ -143,6 +160,7 @@ model Order {
   total         Float         @default(0)
   paidAmount    Float         @default(0)
   notes         String?
+  customerName  String?       // Customer name captured when settling the bill
   paymentMethod String?
   paidAt        DateTime?
   sentAt        DateTime?
@@ -288,4 +306,48 @@ model Settings {
   address        String?
   phone          String?
   printServerIp  String?
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  amount      Float
+  category    ExpenseCategory @default(OTHER)
+  description String?
+  date        DateTime        @default(now())
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   User            @relation(fields: [createdById], references: [id])
+}
+
+model Supplier {
+  id          String            @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  notes       String?
+  totalOwed   Float             @default(0)
+  totalPaid   Float             @default(0)
+  status      SupplierStatus    @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  payments    SupplierPayment[]
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model SupplierPayment {
+  id         String   @id @default(cuid())
+  supplierId String
+  amount     Float
+  date       DateTime @default(now())
+  method     String   @default("CASH")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }

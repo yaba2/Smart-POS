@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getDailyReport, getShiftReport, getMyShifts } from "@/actions/shifts";
+import { getBillReports } from "@/actions/bill-reports";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ interface ReportsClientProps {
 type DailyReport = Awaited<ReturnType<typeof getDailyReport>>;
 type ShiftReport = Awaited<ReturnType<typeof getShiftReport>>;
 type ShiftList = Awaited<ReturnType<typeof getMyShifts>>;
+type BillReport = Awaited<ReturnType<typeof getBillReports>>;
 
 function toDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -428,10 +430,94 @@ function ShiftView({ sym, report }: { sym: string; report: ShiftReport }) {
   );
 }
 
+// ── Bill Reports View ──────────────────────────────────────────────────────────
+function BillReportsView({ sym, report }: { sym: string; report: BillReport }) {
+  const total = report.reduce((sum, r) => sum + r.total, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Banknote className="w-4 h-4 text-green-500" />
+              <span className="text-xs text-gray-500">Total Bills</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{sym}{total.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <ShoppingBag className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-gray-500">Orders</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{report.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="w-4 h-4 text-purple-500" />
+              <span className="text-xs text-gray-500">Customers</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {new Set(report.map((r) => r.customerName).filter((n) => n && n !== "—")).size}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-gray-600">Bill Details ({report.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Order #</th>
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Table</th>
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Waiter / Cashier</th>
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Customer Name</th>
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Payment</th>
+                  <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium">Total</th>
+                  <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium">Paid Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.map((r) => (
+                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 text-gray-400 font-mono text-xs">#{r.orderNumber}</td>
+                    <td className="px-4 py-2.5 font-medium">{r.tableName}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{r.waiterName}</td>
+                    <td className="px-4 py-2.5 text-gray-900">{r.customerName}</td>
+                    <td className="px-4 py-2.5">
+                      {r.paymentMethod && <MethodBadge method={r.paymentMethod} />}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-bold">{sym}{r.total.toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-gray-400">
+                      {r.paidAt ? new Date(r.paidAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {report.length === 0 && (
+              <p className="text-center py-8 text-gray-400 text-sm">No completed bills</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function ReportsClient({ currencySymbol }: ReportsClientProps) {
   const sym = currencySymbol || "$";
-  const [tab, setTab] = useState<"daily" | "shift">("daily");
+  const [tab, setTab] = useState<"daily" | "shift" | "bill">("daily");
   const [loading, setLoading] = useState(false);
 
   // Daily state
@@ -445,6 +531,13 @@ export function ReportsClient({ currencySymbol }: ReportsClientProps) {
   const [shifts, setShifts] = useState<ShiftList | null>(null);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [shiftReport, setShiftReport] = useState<ShiftReport | null>(null);
+
+  // Bill reports state
+  const [billQuickFilter, setBillQuickFilter] = useState<QuickFilter>("today");
+  const [billFrom, setBillFrom] = useState(todayStr());
+  const [billTo, setBillTo] = useState(todayStr());
+  const [billReport, setBillReport] = useState<BillReport | null>(null);
+  const [billReportLabel, setBillReportLabel] = useState("");
 
   const utcOffset = -new Date().getTimezoneOffset(); // e.g. +180 for UTC+3
 
@@ -486,6 +579,17 @@ export function ReportsClient({ currencySymbol }: ReportsClientProps) {
     }
   };
 
+  const loadBillReports = async (from: string, label: string, to?: string) => {
+    setLoading(true);
+    setBillReportLabel(label);
+    try {
+      const data = await getBillReports(from, to, utcOffset);
+      setBillReport(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const applyQuickFilter = (filter: QuickFilter) => {
     setQuickFilter(filter);
     if (filter === "today") loadDailyForDate(todayStr(), "Today");
@@ -501,11 +605,29 @@ export function ReportsClient({ currencySymbol }: ReportsClientProps) {
   };
 
   // Auto-load today on mount
-  useEffect(() => { loadDailyForDate(todayStr(), "Today"); }, []);
+  useEffect(() => {
+    loadDailyForDate(todayStr(), "Today");
+    loadBillReports(todayStr(), "Today");
+  }, []);
 
-  const handleTabChange = (t: "daily" | "shift") => {
+  const handleTabChange = (t: "daily" | "shift" | "bill") => {
     setTab(t);
     if (t === "shift" && !shifts) loadShifts();
+    if (t === "bill" && !billReport) loadBillReports(todayStr(), "Today");
+  };
+
+  const applyBillQuickFilter = (filter: QuickFilter) => {
+    setBillQuickFilter(filter);
+    if (filter === "today") loadBillReports(todayStr(), "Today");
+    if (filter === "yesterday") loadBillReports(yesterdayStr(), "Yesterday");
+    if (filter === "week") {
+      const { from, to } = weekRange();
+      loadBillReports(from, "This Week", to);
+    }
+    if (filter === "month") {
+      const { from, to } = monthRange();
+      loadBillReports(from, "This Month", to);
+    }
   };
 
   const QUICK_TABS: { key: QuickFilter; label: string }[] = [
@@ -542,6 +664,15 @@ export function ReportsClient({ currencySymbol }: ReportsClientProps) {
         >
           <Clock className="w-4 h-4 inline mr-1.5 -mt-0.5" />
           Shift Reports
+        </button>
+        <button
+          onClick={() => handleTabChange("bill")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+            tab === "bill" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+          Bill Reports
         </button>
       </div>
 
@@ -683,6 +814,81 @@ export function ReportsClient({ currencySymbol }: ReportsClientProps) {
           )}
 
           {!loading && shiftReport && <ShiftView sym={sym} report={shiftReport} />}
+        </div>
+      )}
+
+      {/* ── BILL REPORTS TAB ── */}
+      {tab === "bill" && (
+        <div className="space-y-4">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-4 pb-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {QUICK_TABS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => applyBillQuickFilter(key)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                      billQuickFilter === key
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {billQuickFilter === "custom" && (
+                <div className="flex gap-2 items-end flex-wrap pt-1">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">From</label>
+                    <input
+                      type="date"
+                      value={billFrom}
+                      max={todayStr()}
+                      onChange={(e) => setBillFrom(e.target.value)}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">To</label>
+                    <input
+                      type="date"
+                      value={billTo}
+                      max={todayStr()}
+                      onChange={(e) => setBillTo(e.target.value)}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-orange-400"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-orange-500 hover:bg-orange-600"
+                    onClick={() => loadBillReports(billFrom, `${billFrom} → ${billTo}`, billTo)}
+                    disabled={loading || !billFrom || !billTo}
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+                    Load
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {loading && (
+            <div className="text-center py-16 text-gray-400">
+              <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
+              <p>Loading...</p>
+            </div>
+          )}
+
+          {!loading && billReport && (
+            <>
+              <p className="text-xs text-gray-400 font-medium">
+                Showing: <span className="text-gray-700 font-semibold">{billReportLabel}</span>
+              </p>
+              <BillReportsView sym={sym} report={billReport} />
+            </>
+          )}
         </div>
       )}
     </div>
