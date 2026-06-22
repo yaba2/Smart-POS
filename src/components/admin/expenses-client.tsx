@@ -57,6 +57,7 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
     amount: "",
     category: "OTHER" as ExpenseCategory,
     description: "",
+    paymentMethod: "CASH",
     date: todayStr(),
   });
 
@@ -78,7 +79,7 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
   useEffect(() => { loadData(); }, [from, to, category]);
 
   const resetForm = () => {
-    setForm({ amount: "", category: "OTHER", description: "", date: todayStr() });
+    setForm({ amount: "", category: "OTHER", description: "", paymentMethod: "CASH", date: todayStr() });
     setEditing(null);
   };
 
@@ -93,6 +94,7 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
       amount: expense.amount.toString(),
       category: expense.category,
       description: expense.description || "",
+      paymentMethod: expense.paymentMethod || "CASH",
       date: toDateStr(new Date(expense.date)),
     });
     setShowModal(true);
@@ -104,6 +106,7 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
       amount: parseFloat(form.amount),
       category: form.category,
       description: form.description,
+      paymentMethod: form.paymentMethod,
       date: form.date,
     };
 
@@ -252,6 +255,7 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
                   <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Date</th>
                   <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Category</th>
                   <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Description</th>
+                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Method</th>
                   <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium">Amount</th>
                   <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Recorded By</th>
                   {canManage && <th className="text-center px-4 py-2.5 text-xs text-gray-500 font-medium">Actions</th>}
@@ -269,6 +273,11 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-gray-700">{expense.description || "—"}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                        {expense.paymentMethod || "CASH"}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-right font-bold text-red-600">{sym}{expense.amount.toFixed(2)}</td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{expense.createdBy?.name}</td>
                     {canManage && (
@@ -368,6 +377,20 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                <select
+                  value={form.paymentMethod}
+                  onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="BANK">Bank Transfer</option>
+                  <option value="MOBILE_MONEY">Mobile Money</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
               </div>
 
               <div className="space-y-1">

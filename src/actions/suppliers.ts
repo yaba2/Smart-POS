@@ -2,19 +2,26 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { Permission, SupplierStatus } from "@prisma/client";
+import { InvoiceStatus, Permission, SupplierStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 const canManage = (permissions: string[] = []) =>
   permissions.includes(Permission.MANAGE_EXPENSES) ||
   permissions.includes(Permission.MANAGE_SETTINGS);
 
+// ── Supplier CRUD ────────────────────────────────────────────────────────────
+
 export async function getSuppliers() {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
 
   const suppliers = await prisma.supplier.findMany({
-    include: { payments: { orderBy: { date: "desc" } } },
+    include: {
+      invoices: {
+        include: { payments: { orderBy: { paidAt: "desc" } } },
+        orderBy: { invoiceDate: "desc" },
+      },
+    },
     orderBy: { name: "asc" },
   });
 
@@ -27,7 +34,6 @@ export async function createSupplier(data: {
   email?: string;
   address?: string;
   notes?: string;
-  totalOwed?: number;
 }) {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
@@ -41,7 +47,6 @@ export async function createSupplier(data: {
       email: data.email?.trim(),
       address: data.address?.trim(),
       notes: data.notes?.trim(),
-      totalOwed: data.totalOwed || 0,
     },
   });
 
@@ -57,7 +62,6 @@ export async function updateSupplier(
     email?: string;
     address?: string;
     notes?: string;
-    totalOwed?: number;
     status?: SupplierStatus;
   }
 ) {
@@ -74,7 +78,6 @@ export async function updateSupplier(
       email: data.email?.trim(),
       address: data.address?.trim(),
       notes: data.notes?.trim(),
-      totalOwed: data.totalOwed || 0,
       status: data.status,
     },
   });
@@ -94,70 +97,121 @@ export async function deleteSupplier(id: string) {
   return { success: true };
 }
 
-export async function recordSupplierPayment(data: {
+// ── SupplierInvoice CRUD ─────────────────────────────────────────────────────
+
+export async function createInvoice(data: {
   supplierId: string;
+  description?: string;
+  totalAmount: number;
+  invoiceDate: string;
+}) {
+  const session = await getSession();
+  if (!session.userId) return { error: "Not authenticated" };
+  if (!canManage(session.permissions)) return { error: "Permission denied" };
+  if (!data.supplierId) return { error: "Supplier is required" };
+  if (!data.totalAmount || data.totalAmount <= 0) return { error: "Amount must be greater than 0" };
+
+  const invoice = await prisma.supplierInvoice.create({
+    data: {
+      supplierId: data.supplierId,
+      description: data.description?.trim(),
+      totalAmount: data.totalAmount,
+      balanceOwed: data.totalAmount,
+      amountPaid: 0,
+      status: InvoiceStatus.UNPAID,
+      invoiceDate: new Date(data.invoiceDate),
+    },
+  });
+
+  revalidatePath("/admin/suppliers");
+  return { success: true, invoice };
+}
+
+export async function deleteInvoice(id: string) {
+  const session = await getSession();
+  if (!session.userId) return { error: "Not authenticated" };
+  if (!canManage(session.permissions)) return { error: "Permission denied" };
+
+  await prisma.supplierInvoice.delete({ where: { id } });
+
+  revalidatePath("/admin/suppliers");
+  return { success: true };
+}
+
+// ── Invoice Payment recording ────────────────────────────────────────────────
+
+export async function recordInvoicePayment(data: {
+  invoiceId: string;
   amount: number;
-  date: string;
-  method?: string;
+  method: string;
   notes?: string;
+  paidAt: string;
 }) {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
   if (!canManage(session.permissions)) return { error: "Permission denied" };
   if (!data.amount || data.amount <= 0) return { error: "Amount must be greater than 0" };
-  if (!data.supplierId) return { error: "Supplier is required" };
 
-  const supplier = await prisma.supplier.findUnique({ where: { id: data.supplierId } });
-  if (!supplier) return { error: "Supplier not found" };
+  const invoice = await prisma.supplierInvoice.findUnique({ where: { id: data.invoiceId } });
+  if (!invoice) return { error: "Invoice not found" };
+  if (data.amount > invoice.balanceOwed) return { error: `Payment exceeds balance owed (${invoice.balanceOwed})` };
 
-  const payment = await prisma.$transaction(async (tx) => {
-    const p = await tx.supplierPayment.create({
+  await prisma.$transaction(async (tx) => {
+    await tx.invoicePayment.create({
       data: {
-        supplierId: data.supplierId,
+        invoiceId: data.invoiceId,
         amount: data.amount,
-        date: new Date(data.date),
         method: data.method || "CASH",
         notes: data.notes?.trim(),
+        paidAt: new Date(data.paidAt),
       },
     });
 
-    await tx.supplier.update({
-      where: { id: data.supplierId },
-      data: { totalPaid: { increment: data.amount } },
-    });
+    const newAmountPaid = invoice.amountPaid + data.amount;
+    const newBalance = invoice.totalAmount - newAmountPaid;
+    const newStatus: InvoiceStatus =
+      newBalance <= 0
+        ? InvoiceStatus.PAID
+        : newAmountPaid > 0
+        ? InvoiceStatus.PARTIAL
+        : InvoiceStatus.UNPAID;
 
-    return p;
+    await tx.supplierInvoice.update({
+      where: { id: data.invoiceId },
+      data: { amountPaid: newAmountPaid, balanceOwed: newBalance, status: newStatus },
+    });
   });
 
   revalidatePath("/admin/suppliers");
-  return { success: true, payment };
+  return { success: true };
 }
 
-export async function getSupplierPayments(supplierId: string) {
-  const session = await getSession();
-  if (!session.userId) return { error: "Not authenticated" };
-
-  const payments = await prisma.supplierPayment.findMany({
-    where: { supplierId },
-    orderBy: { date: "desc" },
-  });
-
-  return { payments };
-}
-
-export async function deleteSupplierPayment(id: string, supplierId: string) {
+export async function deleteInvoicePayment(id: string, invoiceId: string) {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
   if (!canManage(session.permissions)) return { error: "Permission denied" };
 
-  const payment = await prisma.supplierPayment.findUnique({ where: { id } });
+  const payment = await prisma.invoicePayment.findUnique({ where: { id } });
   if (!payment) return { error: "Payment not found" };
 
   await prisma.$transaction(async (tx) => {
-    await tx.supplierPayment.delete({ where: { id } });
-    await tx.supplier.update({
-      where: { id: supplierId },
-      data: { totalPaid: { decrement: payment.amount } },
+    await tx.invoicePayment.delete({ where: { id } });
+
+    const invoice = await tx.supplierInvoice.findUnique({ where: { id: invoiceId } });
+    if (!invoice) return;
+
+    const newAmountPaid = invoice.amountPaid - payment.amount;
+    const newBalance = invoice.totalAmount - newAmountPaid;
+    const newStatus: InvoiceStatus =
+      newBalance >= invoice.totalAmount
+        ? InvoiceStatus.UNPAID
+        : newAmountPaid > 0
+        ? InvoiceStatus.PARTIAL
+        : InvoiceStatus.UNPAID;
+
+    await tx.supplierInvoice.update({
+      where: { id: invoiceId },
+      data: { amountPaid: newAmountPaid, balanceOwed: newBalance, status: newStatus },
     });
   });
 

@@ -19,6 +19,8 @@ import {
   CreditCard,
   Wallet,
   Truck,
+  Scale,
+  Boxes,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +41,8 @@ const allNavItems = [
   { href: "/admin/reports", icon: BarChart3, label: "Reports", permission: "VIEW_REPORTS" },
   { href: "/admin/expenses", icon: Wallet, label: "Expenses", permission: "MANAGE_EXPENSES" },
   { href: "/admin/suppliers", icon: Truck, label: "Suppliers", permission: "MANAGE_EXPENSES" },
+  { href: "/admin/balance-sheet", icon: Scale, label: "Balance Sheet", permission: "MANAGE_EXPENSES" },
+  { href: "/admin/inventory", icon: Boxes, label: "Inventory", permission: "UPDATE_INVENTORY" },
   { href: "/admin/settings", icon: Settings, label: "Settings", permission: "MANAGE_SETTINGS" },
 ];
 

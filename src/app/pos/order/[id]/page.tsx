@@ -31,6 +31,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         phone: settings.phone || undefined,
         receiptHeader: settings.receiptHeader || undefined,
         receiptFooter: settings.receiptFooter || undefined,
+        receiptLogo: settings.receiptLogo || undefined,
       }}
       printServerIp={settings.printServerIp || undefined}
     />

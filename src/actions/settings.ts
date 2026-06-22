@@ -21,6 +21,7 @@ export async function getSettings() {
 export async function updateSettings(data: {
   restaurantName?: string;
   logo?: string;
+  receiptLogo?: string;
   currency?: string;
   currencySymbol?: string;
   tax?: number;

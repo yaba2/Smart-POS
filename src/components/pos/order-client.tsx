@@ -132,6 +132,7 @@ interface ReceiptSettings {
   phone?: string;
   receiptHeader?: string;
   receiptFooter?: string;
+  receiptLogo?: string;
 }
 
 interface OrderClientProps {
@@ -502,6 +503,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
               restaurantPhone: receiptSettings?.phone,
               header: receiptSettings?.receiptHeader,
               footer: receiptSettings?.receiptFooter,
+              logo: receiptSettings?.receiptLogo,
               items: orderItems.map((i) => {
                 // Build name: append only paid extras (not free accompaniments)
                 let displayName = i.menuItem.name;

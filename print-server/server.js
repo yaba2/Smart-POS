@@ -9,12 +9,27 @@
  * For Network printers: connects via TCP socket directly.
  */
 
+require("dotenv").config({ path: require("path").join(__dirname, ".env") });
+
 const WebSocket = require("ws");
 const http = require("http");
 const net = require("net");
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+
+// Log to file so background-process output is visible
+const LOG_FILE = path.join(__dirname, "print-server.log");
+const _origLog = console.log.bind(console);
+const _origErr = console.error.bind(console);
+const _origWarn = console.warn.bind(console);
+function writeLog(level, args) {
+  const line = `[${new Date().toISOString()}] [${level}] ${args.join(" ")}\n`;
+  fs.appendFileSync(LOG_FILE, line);
+}
+console.log  = (...a) => { _origLog(...a);  writeLog("INFO",  a); };
+console.error = (...a) => { _origErr(...a); writeLog("ERROR", a); };
+console.warn  = (...a) => { _origWarn(...a); writeLog("WARN",  a); };
 
 // ── Configuration ──────────────────────────────────────────────────────────────
 // For each destination set EITHER:
@@ -70,10 +85,14 @@ function startServer() {
 
   plainServer.on("error", (err) => {
     if (err.code === "EADDRINUSE") {
-      console.error(`[Print Server] Port ${WS_PORT} already in use. Retrying in 2s...`);
-      setTimeout(startServer, 2000);
+      console.error(`\n[Print Server] ✗ Port ${WS_PORT} is already in use!`);
+      console.error(`  Another print server is already running on this machine.`);
+      console.error(`  Check your PowerShell/terminal windows and close the other instance.`);
+      console.error(`  To find it: run  netstat -ano | findstr :${WS_PORT}  then  taskkill /PID <pid> /F\n`);
+      process.exit(1);
     } else {
       console.error("[Print Server] Fatal error:", err.message);
+      process.exit(1);
     }
   });
 

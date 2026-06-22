@@ -109,9 +109,12 @@ model User {
   permissions Permission[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  orders      Order[]
-  shifts      Shift[]
-  expenses    Expense[]
+  orders                  Order[]
+  shifts                  Shift[]
+  expenses                Expense[]
+  inventoryTransactions   InventoryTransaction[]   @relation("InventoryTransactions")
+  requisitionsRequested   StockRequisition[]       @relation("RequisitionsRequested")
+  requisitionsApproved    StockRequisition[]       @relation("RequisitionsApproved")
 }
 
 model Table {
@@ -298,6 +301,7 @@ model Settings {
   id             String  @id @default(cuid())
   restaurantName String  @default("Smart POS")
   logo           String?
+  receiptLogo    String? @db.Text
   currency       String  @default("USD")
   currencySymbol String  @default("$")
   tax            Float   @default(0)
@@ -309,30 +313,30 @@ model Settings {
 }
 
 model Expense {
-  id          String          @id @default(cuid())
-  amount      Float
-  category    ExpenseCategory @default(OTHER)
-  description String?
-  date        DateTime        @default(now())
-  createdById String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  createdBy   User            @relation(fields: [createdById], references: [id])
+  id            String          @id @default(cuid())
+  amount        Float
+  category      ExpenseCategory @default(OTHER)
+  description   String?
+  paymentMethod String          @default("CASH")
+  date          DateTime        @default(now())
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdBy     User            @relation(fields: [createdById], references: [id])
 }
 
 model Supplier {
-  id          String            @id @default(cuid())
-  name        String
-  phone       String?
-  email       String?
-  address     String?
-  notes       String?
-  totalOwed   Float             @default(0)
-  totalPaid   Float             @default(0)
-  status      SupplierStatus    @default(ACTIVE)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  payments    SupplierPayment[]
+  id        String            @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  status    SupplierStatus    @default(ACTIVE)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  invoices        SupplierInvoice[]
+  inventoryItems  InventoryItem[]
 }
 
 enum SupplierStatus {
@@ -340,14 +344,131 @@ enum SupplierStatus {
   INACTIVE
 }
 
-model SupplierPayment {
-  id         String   @id @default(cuid())
-  supplierId String
-  amount     Float
-  date       DateTime @default(now())
-  method     String   @default("CASH")
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+enum InvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model SupplierInvoice {
+  id               String           @id @default(cuid())
+  supplierId       String
+  description      String?
+  totalAmount      Float
+  amountPaid       Float            @default(0)
+  balanceOwed      Float
+  status           InvoiceStatus    @default(UNPAID)
+  invoiceDate      DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  supplier         Supplier         @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  payments         InvoicePayment[]
+}
+
+model InvoicePayment {
+  id        String          @id @default(cuid())
+  invoiceId String
+  amount    Float
+  method    String          @default("CASH")
+  notes     String?
+  paidAt    DateTime        @default(now())
+  createdAt DateTime        @default(now())
+  invoice   SupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+// ── Inventory Management ──────────────────────────────────────────────────────
+
+enum InventoryUnit {
+  KG
+  GRAMS
+  LITERS
+  ML
+  PIECES
+  BOTTLES
+  CANS
+  BOXES
+  BAGS
+  PORTIONS
+  OTHER
+}
+
+enum TransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  WASTE
+  RETURN
+}
+
+enum RequisitionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+}
+
+model InventoryItem {
+  id               String                 @id @default(cuid())
+  name             String
+  sku              String?                @unique
+  category         String                 @default("General")
+  unit             InventoryUnit          @default(PIECES)
+  currentStock     Float                  @default(0)
+  minStockLevel    Float                  @default(0)
+  maxStockLevel    Float?
+  reorderPoint     Float                  @default(0)
+  costPerUnit      Float                  @default(0)
+  supplierId       String?
+  description      String?
+  location         String?
+  active           Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  supplier         Supplier?              @relation(fields: [supplierId], references: [id])
+  transactions     InventoryTransaction[]
+  requisitionItems RequisitionItem[]
+}
+
+model InventoryTransaction {
+  id              String          @id @default(cuid())
+  itemId          String
+  type            TransactionType
+  quantity        Float
+  quantityBefore  Float
+  quantityAfter   Float
+  costPerUnit     Float?
+  totalCost       Float?
+  reference       String?
+  notes           String?
+  createdById     String
+  createdAt       DateTime        @default(now())
+  item            InventoryItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("InventoryTransactions", fields: [createdById], references: [id])
+}
+
+model StockRequisition {
+  id          String             @id @default(cuid())
+  title       String
+  notes       String?
+  status      RequisitionStatus  @default(PENDING)
+  requestedBy String
+  approvedBy  String?
+  approvedAt  DateTime?
+  fulfilledAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  requester   User               @relation("RequisitionsRequested", fields: [requestedBy], references: [id])
+  approver    User?              @relation("RequisitionsApproved", fields: [approvedBy], references: [id])
+  items       RequisitionItem[]
+}
+
+model RequisitionItem {
+  id              String           @id @default(cuid())
+  requisitionId   String
+  itemId          String
+  quantityRequested Float
+  quantityFulfilled Float?
+  notes           String?
+  requisition     StockRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  item            InventoryItem    @relation(fields: [itemId], references: [id])
 }

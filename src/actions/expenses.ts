@@ -35,6 +35,7 @@ export async function createExpense(data: {
   amount: number;
   category: ExpenseCategory;
   description: string;
+  paymentMethod: string;
   date: string;
 }) {
   const session = await getSession();
@@ -49,6 +50,7 @@ export async function createExpense(data: {
       amount: data.amount,
       category: data.category,
       description: data.description?.trim() || "",
+      paymentMethod: data.paymentMethod || "CASH",
       date: new Date(data.date),
       createdById: session.userId,
     },
@@ -64,6 +66,7 @@ export async function updateExpense(
     amount: number;
     category: ExpenseCategory;
     description: string;
+    paymentMethod: string;
     date: string;
   }
 ) {
@@ -80,6 +83,7 @@ export async function updateExpense(
       amount: data.amount,
       category: data.category,
       description: data.description?.trim() || "",
+      paymentMethod: data.paymentMethod || "CASH",
       date: new Date(data.date),
     },
   });

@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Save, Store, DollarSign, Receipt, ImageIcon, AlignCenter, Eye, Printer } from "lucide-react";
+import { Save, Store, DollarSign, Receipt, ImageIcon, AlignCenter, Eye, Printer, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Settings {
   id: string;
   restaurantName: string;
   logo: string | null;
+  receiptLogo: string | null;
   currency: string;
   currencySymbol: string;
   tax: number;
@@ -35,6 +36,7 @@ export function SettingsClient({ settings }: SettingsClientProps) {
   const [form, setForm] = useState({
     restaurantName: settings.restaurantName,
     logo: settings.logo || "",
+    receiptLogo: settings.receiptLogo || "",
     currency: settings.currency,
     currencySymbol: settings.currencySymbol,
     tax: String(settings.tax),
@@ -55,6 +57,7 @@ export function SettingsClient({ settings }: SettingsClientProps) {
       await updateSettings({
         restaurantName: form.restaurantName,
         logo: form.logo || undefined,
+        receiptLogo: form.receiptLogo || undefined,
         currency: form.currency,
         currencySymbol: form.currencySymbol,
         tax: Number(form.tax),
@@ -172,31 +175,58 @@ export function SettingsClient({ settings }: SettingsClientProps) {
             </CardHeader>
             <CardContent className="space-y-5">
 
-              {/* Logo URL */}
+              {/* Receipt Logo Upload */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-gray-400" /> Logo URL
+                  <ImageIcon className="w-3.5 h-3.5 text-gray-400" /> Bill Printer Logo
                 </Label>
-                <Input
-                  value={form.logo}
-                  onChange={set("logo")}
-                  placeholder="https://example.com/logo.png  (leave blank for text-only)"
-                />
-                <p className="text-xs text-gray-400">
-                  Paste a public image URL. The image will print as ASCII art on the receipt header.
-                </p>
-                {form.logo && (
-                  <div className="flex items-center gap-3 mt-2 p-2 border rounded-lg bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Upload className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">Upload logo image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 200 * 1024) {
+                          alert("Image too large — please use an image under 200KB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setForm((f) => ({ ...f, receiptLogo: reader.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  {form.receiptLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, receiptLogo: "" }))}
+                      className="p-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-400"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {form.receiptLogo && (
+                  <div className="flex items-center gap-3 p-2 border rounded-lg bg-gray-50">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={form.logo}
-                      alt="Logo preview"
+                      src={form.receiptLogo}
+                      alt="Receipt logo preview"
                       className="h-12 w-auto object-contain rounded"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
-                    <span className="text-xs text-gray-500">Logo preview</span>
+                    <span className="text-xs text-gray-500">Logo ready — will print on bill header</span>
                   </div>
                 )}
+                <p className="text-xs text-gray-400">
+                  Upload your restaurant logo (PNG/JPG, max 200KB). Prints at the top of the customer bill.
+                </p>
               </div>
 
               {/* Header Text */}
@@ -250,11 +280,11 @@ export function SettingsClient({ settings }: SettingsClientProps) {
                 style={{ width: "100%", maxWidth: 300 }}
               >
                 {/* Logo */}
-                {form.logo && (
+                {(form.receiptLogo || form.logo) && (
                   <div className="flex justify-center mb-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={form.logo}
+                      src={form.receiptLogo || form.logo}
                       alt="logo"
                       className="h-14 w-auto object-contain"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}

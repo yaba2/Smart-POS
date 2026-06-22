@@ -53,9 +53,12 @@ export async function loginWithPin(pin: string) {
     return { error: "Invalid PIN code" };
   }
 
-  const roleDefaults = DEFAULT_PERMISSIONS[user.role] || [];
+  // Use stored permissions as the exact source of truth.
+  // If no permissions stored yet (new user), fall back to role defaults.
   const userPerms = user.permissions as string[];
-  const permissions = Array.from(new Set([...roleDefaults, ...userPerms]));
+  const permissions = userPerms.length > 0
+    ? userPerms
+    : (DEFAULT_PERMISSIONS[user.role] || []);
 
   const session = await getSession();
   session.userId = user.id;
@@ -83,9 +86,12 @@ export async function loginAdmin(username: string, password: string) {
     return { error: "Invalid credentials" };
   }
 
-  const roleDefaults = DEFAULT_PERMISSIONS[user.role] || [];
+  // Use stored permissions as the exact source of truth.
+  // If no permissions stored yet (new user), fall back to role defaults.
   const userPerms = user.permissions as string[];
-  const permissions = Array.from(new Set([...roleDefaults, ...userPerms]));
+  const permissions = userPerms.length > 0
+    ? userPerms
+    : (DEFAULT_PERMISSIONS[user.role] || []);
 
   const session = await getSession();
   session.userId = user.id;

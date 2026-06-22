@@ -48,6 +48,16 @@ function strToHex(str: string): string {
 }
 
 /**
+ * Expand an item with quantity > 1 into multiple single-quantity rows.
+ * Kitchens often want one ticket line per physical item so nothing is missed.
+ */
+function expandItemsByQuantity<T extends { quantity: number }>(items: T[]): T[] {
+  return items.flatMap((item) =>
+    Array.from({ length: item.quantity }, () => ({ ...item, quantity: 1 }))
+  );
+}
+
+/**
  * Pad string to fit 48 characters (80mm @ 12cpi)
  * 80mm = ~48 characters with 12cpi font
  */
@@ -100,17 +110,13 @@ export function generateKitchenTicket(data: KitchenTicketData): string {
   // Initialize
   commands.push(COMMANDS.INITIALIZE);
   
-  // Header - Large and bold
+  // Header
   commands.push(COMMANDS.ALIGN_CENTER);
-  commands.push(COMMANDS.DOUBLE_SIZE);
-  commands.push(strToHex('*** KITCHEN ***'));
+  commands.push(strToHex('KITCHEN'));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(COMMANDS.NORMAL);
-  commands.push(COMMANDS.BOLD_ON);
   commands.push(strToHex(`TABLE: ${data.tableName}`));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(COMMANDS.BOLD_OFF);
-  commands.push(strToHex(`Order #${data.orderId.slice(-4)} • ${data.waiterName}`));
+  commands.push(strToHex(`Order #${data.orderId.slice(-4)}  ${data.waiterName}`));
   commands.push(COMMANDS.LINE_FEED);
   commands.push(strToHex(new Date(data.timestamp).toLocaleTimeString()));
   commands.push(COMMANDS.LINE_FEED);
@@ -120,34 +126,29 @@ export function generateKitchenTicket(data: KitchenTicketData): string {
   commands.push(strToHex('='.repeat(48)));
   commands.push(COMMANDS.LINE_FEED);
   
-  // Items - Big and clear
-  data.items.forEach((item, index) => {
+  // Items - Big and clear, one line per physical item
+  const expandedItems = expandItemsByQuantity(data.items);
+  expandedItems.forEach((item, index) => {
     commands.push(COMMANDS.LINE_FEED);
     
-    // Quantity and name - BOLD and large
-    commands.push(COMMANDS.BOLD_ON);
-    commands.push(COMMANDS.DOUBLE_HEIGHT);
-    commands.push(strToHex(`${item.quantity}x ${item.name.toUpperCase()}`));
-    commands.push(COMMANDS.NORMAL);
-    commands.push(COMMANDS.BOLD_OFF);
+    // Quantity and name
+    commands.push(strToHex(`${item.quantity}x  ${item.name}`));
     commands.push(COMMANDS.LINE_FEED);
     
     // Modifiers
     if (item.modifiers && item.modifiers.length > 0) {
-      commands.push(strToHex(`   > ${item.modifiers.join(', ')}`));
+      commands.push(strToHex(`   ${item.modifiers.join(', ')}`));
       commands.push(COMMANDS.LINE_FEED);
     }
     
     // Special notes
     if (item.notes) {
-      commands.push(COMMANDS.BOLD_ON);
-      commands.push(strToHex(`   *** ${item.notes.toUpperCase()} ***`));
-      commands.push(COMMANDS.BOLD_OFF);
+      commands.push(strToHex(`   Note: ${item.notes}`));
       commands.push(COMMANDS.LINE_FEED);
     }
     
     // Separator between items
-    if (index < data.items.length - 1) {
+    if (index < expandedItems.length - 1) {
       commands.push(strToHex('-'.repeat(48)));
       commands.push(COMMANDS.LINE_FEED);
     }
@@ -158,7 +159,7 @@ export function generateKitchenTicket(data: KitchenTicketData): string {
   commands.push(COMMANDS.ALIGN_CENTER);
   commands.push(strToHex('='.repeat(48)));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(strToHex(`${data.items.length} item(s)`));
+  commands.push(strToHex(`${expandedItems.length} item(s)`));
   commands.push(COMMANDS.LINE_FEED);
   
   // Cut paper (GS V B already feeds before cutting)
@@ -184,26 +185,18 @@ export function generateBarTicket(data: BarTicketData): string {
   
   // Header
   commands.push(COMMANDS.ALIGN_CENTER);
-  commands.push(COMMANDS.DOUBLE_SIZE);
-  commands.push(strToHex('*** BAR ***'));
+  commands.push(strToHex('BAR'));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(COMMANDS.NORMAL);
   
   // Priority indicator
   if (data.priority && data.priority !== 'NORMAL') {
-    commands.push(COMMANDS.BOLD_ON);
-    commands.push(COMMANDS.DOUBLE_HEIGHT);
-    commands.push(strToHex(`!!! ${data.priority} !!!`));
-    commands.push(COMMANDS.NORMAL);
-    commands.push(COMMANDS.BOLD_OFF);
+    commands.push(strToHex(`${data.priority}`));
     commands.push(COMMANDS.LINE_FEED);
   }
   
-  commands.push(COMMANDS.BOLD_ON);
   commands.push(strToHex(`TABLE: ${data.tableName}`));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(COMMANDS.BOLD_OFF);
-  commands.push(strToHex(`Order #${data.orderId.slice(-4)} • ${data.waiterName}`));
+  commands.push(strToHex(`Order #${data.orderId.slice(-4)}  ${data.waiterName}`));
   commands.push(COMMANDS.LINE_FEED);
   commands.push(strToHex(new Date(data.timestamp).toLocaleTimeString()));
   commands.push(COMMANDS.LINE_FEED);
@@ -213,32 +206,27 @@ export function generateBarTicket(data: BarTicketData): string {
   commands.push(strToHex('='.repeat(48)));
   commands.push(COMMANDS.LINE_FEED);
   
-  // Drinks - Extra large for visibility in dim bar
-  data.items.forEach((item, index) => {
+  // Drinks - Extra large for visibility in dim bar, one line per physical drink
+  const expandedItems = expandItemsByQuantity(data.items);
+  expandedItems.forEach((item, index) => {
     commands.push(COMMANDS.LINE_FEED);
     
-    // Drink name - EXTRA LARGE
-    commands.push(COMMANDS.BOLD_ON);
-    commands.push(COMMANDS.DOUBLE_SIZE);
-    commands.push(strToHex(`${item.quantity}x ${item.name.toUpperCase()}`));
-    commands.push(COMMANDS.NORMAL);
-    commands.push(COMMANDS.BOLD_OFF);
+    // Drink name
+    commands.push(strToHex(`${item.quantity}x  ${item.name}`));
     commands.push(COMMANDS.LINE_FEED);
     
     // Mixers/garnishes
     if (item.modifiers && item.modifiers.length > 0) {
-      commands.push(COMMANDS.BOLD_ON);
-      commands.push(strToHex(`   + ${item.modifiers.join(' + ')}`));
-      commands.push(COMMANDS.BOLD_OFF);
+      commands.push(strToHex(`   ${item.modifiers.join(', ')}`));
       commands.push(COMMANDS.LINE_FEED);
     }
     
     if (item.notes) {
-      commands.push(strToHex(`   * ${item.notes}`));
+      commands.push(strToHex(`   Note: ${item.notes}`));
       commands.push(COMMANDS.LINE_FEED);
     }
     
-    if (index < data.items.length - 1) {
+    if (index < expandedItems.length - 1) {
       commands.push(strToHex('-'.repeat(48)));
       commands.push(COMMANDS.LINE_FEED);
     }
@@ -249,7 +237,7 @@ export function generateBarTicket(data: BarTicketData): string {
   commands.push(COMMANDS.ALIGN_CENTER);
   commands.push(strToHex('='.repeat(48)));
   commands.push(COMMANDS.LINE_FEED);
-  commands.push(strToHex(`${data.items.length} drink(s)`));
+  commands.push(strToHex(`${expandedItems.length} drink(s)`));
   commands.push(COMMANDS.LINE_FEED);
   commands.push(COMMANDS.CUT_PARTIAL);
   
@@ -282,6 +270,7 @@ export interface ReceiptData {
   restaurantPhone?: string;
   header?: string;
   footer?: string;
+  logo?: string; // base64 data URL — used for screen preview; printed as text on thermal printer
 }
 
 /**
