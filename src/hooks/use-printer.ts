@@ -365,7 +365,7 @@ export function usePrinter(options: UsePrinterOptions = {}): UsePrinterReturn {
    * Print customer receipt
    */
   const printReceipt = useCallback(async (data: ReceiptData): Promise<string> => {
-    const commands = generateReceipt(data);
+    const commands = await generateReceipt(data);
     return sendPrintJob("BILL", commands);
   }, [sendPrintJob]);
 

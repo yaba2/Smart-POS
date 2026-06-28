@@ -557,7 +557,13 @@ export function MenuAdminClient({ categories: initCategories, items: initItems, 
                     src={itemForm.image}
                     alt="Preview"
                     className="w-full h-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = ""; (e.currentTarget.parentElement!.innerHTML = "<span class=\"text-xs text-red-400 flex items-center justify-center h-full px-1 text-center\">Invalid URL</span>"); }}
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      const parent = img.parentElement;
+                      if (parent) {
+                        parent.innerHTML = "<span class=\"text-xs text-red-400 flex items-center justify-center h-full px-1 text-center\">Invalid URL</span>";
+                      }
+                    }}
                   />
                 </div>
               )}

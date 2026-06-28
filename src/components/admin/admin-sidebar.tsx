@@ -39,6 +39,8 @@ const allNavItems = [
   { href: "/admin/printers", icon: Printer, label: "Printers", permission: "MANAGE_SETTINGS" },
   { href: "/admin/payment-methods", icon: CreditCard, label: "Payment Methods", permission: "MANAGE_SETTINGS" },
   { href: "/admin/reports", icon: BarChart3, label: "Reports", permission: "VIEW_REPORTS" },
+  { href: "/admin/customers", icon: Users, label: "Customers", permission: "MANAGE_CUSTOMERS" },
+  { href: "/admin/customer-credits", icon: CreditCard, label: "Customer Credits", permission: "MANAGE_CUSTOMER_CREDITS" },
   { href: "/admin/expenses", icon: Wallet, label: "Expenses", permission: "MANAGE_EXPENSES" },
   { href: "/admin/suppliers", icon: Truck, label: "Suppliers", permission: "MANAGE_EXPENSES" },
   { href: "/admin/balance-sheet", icon: Scale, label: "Balance Sheet", permission: "MANAGE_EXPENSES" },

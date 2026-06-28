@@ -96,6 +96,16 @@ enum Permission {
   // Admin
   VIEW_AUDIT_LOG
   BACKUP_DATA
+
+  // Customer Credit
+  MANAGE_CUSTOMERS
+  MANAGE_CUSTOMER_CREDITS
+}
+
+enum CreditStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
 }
 
 model User {
@@ -174,6 +184,7 @@ model Order {
   waiter        User          @relation(fields: [waiterId], references: [id])
   orderItems    OrderItem[]
   payments      Payment[]
+  customerCredits CustomerCredit[]
 }
 
 model Payment {
@@ -185,6 +196,33 @@ model Payment {
   createdAt     DateTime      @default(now())
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   shift         Shift?        @relation(fields: [shiftId], references: [id])
+}
+
+model Customer {
+  id          String         @id @default(cuid())
+  name        String
+  phone       String?
+  address     String?
+  email       String?
+  creditLimit Float          @default(0)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  credits     CustomerCredit[]
+}
+
+model CustomerCredit {
+  id             String      @id @default(cuid())
+  customerId     String
+  orderId        String
+  originalAmount Float
+  paidAmount     Float       @default(0)
+  status         CreditStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  customer       Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model MenuItemOption {

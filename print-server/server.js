@@ -16,6 +16,7 @@ const http = require("http");
 const net = require("net");
 const { exec } = require("child_process");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 // Log to file so background-process output is visible
@@ -260,11 +261,25 @@ function sendToUsbPrinter(printerName, portName, hexCommands) {
       return reject(new Error("No printer name configured"));
     }
 
+    // Write hex commands to a temp file so very long receipts (e.g. with logos)
+    // do not exceed the Windows command-line length limit (8191 chars).
+    const tmpFile = path.join(os.tmpdir(), `smart_pos_print_${Date.now()}_${Math.random().toString(36).slice(2)}.hex`);
+    try {
+      fs.writeFileSync(tmpFile, hexCommands, "utf8");
+    } catch (err) {
+      return reject(new Error(`Failed to write temp print file: ${err.message}`));
+    }
+
     // Escape printer name for command line (wrap in quotes, escape internal quotes)
     const safeName = printerName.replace(/"/g, '\\"');
-    const cmd = `python "${RAWPRINT_PY}" "${safeName}" ${hexCommands}`;
+    const cmd = `python "${RAWPRINT_PY}" "${safeName}" "@${tmpFile}"`;
+
+    const cleanup = () => {
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+    };
 
     exec(cmd, { shell: "cmd.exe", timeout: 15000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+      cleanup();
       if (err) {
         return reject(new Error(`rawprint.py failed: ${stderr.trim() || err.message}`));
       }

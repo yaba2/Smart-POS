@@ -1,9 +1,37 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { OrderStatus, TableStatus } from "@prisma/client";
+import { CreditStatus, OrderStatus, TableStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getAnyOpenShift } from "./shifts";
+
+async function createCustomerCreditForOrder(customerId: string, orderId: string, amount: number): Promise<{ error: string } | { success: true }> {
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: { credits: true },
+  });
+  if (!customer) return { error: "Customer not found" };
+  if (!customer.active) return { error: "Customer is inactive" };
+
+  const currentOwed = customer.credits.reduce(
+    (sum, c) => sum + (c.originalAmount - c.paidAmount),
+    0
+  );
+  if (customer.creditLimit > 0 && currentOwed + amount > customer.creditLimit) {
+    return { error: "This would exceed the customer's credit limit" };
+  }
+
+  await prisma.customerCredit.create({
+    data: {
+      customerId,
+      orderId,
+      originalAmount: amount,
+      paidAmount: 0,
+      status: CreditStatus.PENDING,
+    },
+  });
+  return { success: true };
+}
 
 export async function getOrderByTable(tableId: string) {
   return prisma.order.findFirst({
@@ -156,7 +184,7 @@ export async function printBill(orderId: string) {
   return { success: true };
 }
 
-export async function completePayment(orderId: string, paymentMethod: string, customerName?: string) {
+export async function completePayment(orderId: string, paymentMethod: string, customerName?: string, customerId?: string): Promise<{ error: string } | { success: true }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { table: true },
@@ -169,6 +197,13 @@ export async function completePayment(orderId: string, paymentMethod: string, cu
 
   // Calculate remaining amount to pay (in case of partial payments)
   const remainingAmount = order.total - order.paidAmount;
+
+  // If customer credit, create credit record
+  if (paymentMethod === "CUSTOMER_CREDIT") {
+    if (!customerId) return { error: "Customer is required for credit payment" };
+    const creditResult = await createCustomerCreditForOrder(customerId, orderId, remainingAmount);
+    if ("error" in creditResult) return creditResult;
+  }
 
   // Record the payment transaction with shiftId
   await prisma.payment.create({
@@ -337,8 +372,9 @@ export async function splitBill(
   waiterId: string,
   action: "print" | "settle",
   paymentMethod?: string,
-  customerName?: string
-) {
+  customerName?: string,
+  customerId?: string
+): Promise<{ error: string } | { success: true; splitOrder: any }> {
   const originalOrder = await prisma.order.findUnique({
     where: { id: originalOrderId },
     include: { orderItems: true, table: true },
@@ -370,6 +406,13 @@ export async function splitBill(
 
   // Record payment if settling
   if (action === "settle" && selectedTotal > 0) {
+    // If customer credit, create credit record
+    if (paymentMethod === "CUSTOMER_CREDIT") {
+      if (!customerId) return { error: "Customer is required for credit payment" };
+      const creditResult = await createCustomerCreditForOrder(customerId, splitOrder.id, selectedTotal);
+      if ("error" in creditResult) return creditResult;
+    }
+
     // Get current active shift
     const currentShift = await getAnyOpenShift();
     await prisma.payment.create({
@@ -429,8 +472,9 @@ export async function recordPartialPayment(
   orderId: string,
   paymentMethod: string,
   amount: number,
-  customerName?: string
-) {
+  customerName?: string,
+  customerId?: string
+): Promise<{ error: string } | { success: true; fullyPaid: boolean; remaining: number; paidAmount: number }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { table: true },
@@ -443,6 +487,13 @@ export async function recordPartialPayment(
 
   const newPaidAmount = order.paidAmount + amount;
   const isFullyPaid = newPaidAmount >= order.total;
+
+  // If customer credit, create credit record for this amount
+  if (paymentMethod === "CUSTOMER_CREDIT") {
+    if (!customerId) return { error: "Customer is required for credit payment" };
+    const creditResult = await createCustomerCreditForOrder(customerId, orderId, amount);
+    if ("error" in creditResult) return creditResult;
+  }
 
   // Record the payment transaction with shiftId
   await prisma.payment.create({

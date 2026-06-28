@@ -199,6 +199,7 @@ async function main() {
     { name: "Sahal", code: "SAHAL", icon: "Smartphone", color: "text-blue-600",   sortOrder: 2 },
     { name: "EVC",   code: "EVC",   icon: "Smartphone", color: "text-purple-600", sortOrder: 3 },
     { name: "Card",  code: "CARD",  icon: "CreditCard", color: "text-orange-600", sortOrder: 4 },
+    { name: "Customer Credit", code: "CUSTOMER_CREDIT", icon: "Users", color: "text-red-600", sortOrder: 5 },
   ];
   for (const pm of defaultPaymentMethods) {
     await prisma.paymentMethodConfig.upsert({

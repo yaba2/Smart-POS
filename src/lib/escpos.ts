@@ -82,6 +82,91 @@ function build(...parts: string[]): string {
   return parts.join('');
 }
 
+// ==================== IMAGE / LOGO HELPERS ====================
+
+/**
+ * Load a base64 image into an HTMLImageElement
+ */
+function loadImage(base64: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = base64;
+  });
+}
+
+/**
+ * Convert a base64 image to ESC/POS 24-dot double-density raster bit image commands.
+ * Optimized for 58mm printers (max 384 dots). The logo is centered/dithered to 1-bit.
+ */
+async function imageToEscPosRaster(base64: string, maxWidth = 384): Promise<string> {
+  const img = await loadImage(base64);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("Canvas not supported");
+
+  // Keep aspect ratio and fit within printer width
+  const ratio = img.naturalHeight / img.naturalWidth;
+  const width = Math.max(1, Math.min(maxWidth, img.naturalWidth));
+  const height = Math.max(1, Math.round(width * ratio));
+
+  canvas.width = width;
+  canvas.height = height;
+
+  // Draw white background then image
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  // 24-dot double-density mode: each raster line is 24 dots high
+  const lineHeight = 24;
+  const rasterLines = Math.ceil(height / lineHeight);
+  const nL = width & 0xff;
+  const nH = (width >> 8) & 0xff;
+
+  let hex = "";
+  for (let line = 0; line < rasterLines; line++) {
+    const yStart = line * lineHeight;
+    // ESC * m nL nH  (m=33: 24-dot double-density)
+    hex += "1b2a21";
+    hex += nL.toString(16).padStart(2, "0");
+    hex += nH.toString(16).padStart(2, "0");
+
+    for (let x = 0; x < width; x++) {
+      let b1 = 0;
+      let b2 = 0;
+      let b3 = 0;
+      for (let row = 0; row < lineHeight; row++) {
+        const y = yStart + row;
+        if (y < height) {
+          const idx = (y * width + x) * 4;
+          // Simple luminance threshold
+          const luma = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          const bit = luma < 128 ? 1 : 0;
+          // MSB is top dot in each byte
+          if (row < 8) {
+            b1 |= bit << (7 - row);
+          } else if (row < 16) {
+            b2 |= bit << (15 - row);
+          } else {
+            b3 |= bit << (23 - row);
+          }
+        }
+      }
+      hex += b1.toString(16).padStart(2, "0");
+      hex += b2.toString(16).padStart(2, "0");
+      hex += b3.toString(16).padStart(2, "0");
+    }
+  }
+
+  return hex;
+}
+
 // ==================== KITCHEN TICKET ====================
 
 export interface KitchenTicketItem {
@@ -270,20 +355,32 @@ export interface ReceiptData {
   restaurantPhone?: string;
   header?: string;
   footer?: string;
-  logo?: string; // base64 data URL — used for screen preview; printed as text on thermal printer
+  logo?: string; // base64 data URL — printed as ESC/POS raster bit image on thermal printers
 }
 
 /**
  * Generate customer receipt with prices and totals
  * 80mm format
  */
-export function generateReceipt(data: ReceiptData): string {
+export async function generateReceipt(data: ReceiptData): Promise<string> {
   const commands: string[] = [];
   const SYM = '$'; // Could be dynamic from settings
-  
+
   // Initialize
   commands.push(COMMANDS.INITIALIZE);
-  
+
+  // Print uploaded logo if available
+  if (data.logo) {
+    commands.push(COMMANDS.ALIGN_CENTER);
+    try {
+      const logoHex = await imageToEscPosRaster(data.logo, 384);
+      commands.push(logoHex);
+      commands.push(COMMANDS.LINE_FEED);
+    } catch (e) {
+      console.error("[Printer] Failed to convert logo for printing:", e);
+    }
+  }
+
   // Restaurant header
   commands.push(COMMANDS.ALIGN_CENTER);
   commands.push(COMMANDS.BOLD_ON);

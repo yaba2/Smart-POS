@@ -15,6 +15,7 @@ import {
   recordPartialPayment,
   mergeOrders,
 } from "@/actions/orders";
+import { getCustomers } from "@/actions/customers";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -158,8 +159,12 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [partialAmount, setPartialAmount] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [customersLoading, setCustomersLoading] = useState(false);
   const [orderStatus, setOrderStatus] = useState(order.status);
   const [livePaidAmount, setLivePaidAmount] = useState(order.paidAmount);
+
   // IDs of items that were already sent to kitchen when this page loaded
   const [sentItemIds] = useState<Set<string>>(
     () => new Set(order.status !== "OPEN" ? order.orderItems.map((i) => i.id) : [])
@@ -170,6 +175,17 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showSplitPaymentModal, setShowSplitPaymentModal] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
+
+  // Load customers when payment modal opens
+  useEffect(() => {
+    if (showPaymentModal || showSplitPaymentModal) {
+      setCustomersLoading(true);
+      getCustomers().then((res) => {
+        if (res.customers) setCustomers(res.customers.filter((c) => c.active));
+        setCustomersLoading(false);
+      });
+    }
+  }, [showPaymentModal, showSplitPaymentModal]);
 
   // Modifier selection dialog
   const [modifierDialogItem, setModifierDialogItem] = useState<MenuItem | null>(null);
@@ -551,7 +567,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("payment");
     try {
-      const result = await completePayment(order.id, selectedPayment, customerName.trim() || undefined);
+      const result = await completePayment(order.id, selectedPayment, customerName.trim() || undefined, selectedCustomerId || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -646,7 +662,8 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
         order.waiter.id,
         "settle",
         selectedPayment,
-        customerName.trim() || undefined
+        customerName.trim() || undefined,
+        selectedCustomerId || undefined
       );
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
@@ -680,7 +697,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("partial");
     try {
-      const result = await recordPartialPayment(order.id, selectedPayment, amount, customerName.trim() || undefined);
+      const result = await recordPartialPayment(order.id, selectedPayment, amount, customerName.trim() || undefined, selectedCustomerId || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -749,29 +766,29 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
               Order is {order.status.toLowerCase()} — no more items can be added
             </div>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {currentCategory?.items.map((item) => (
               <button
                 key={item.id}
                 onClick={() => !isLocked && item.available && handleAddItem(item)}
                 disabled={isLocked || actionLoading === `add-${item.id}` || !item.available}
                 className={cn(
-                  "flex flex-col p-3 bg-white border-2 border-gray-100 rounded-xl text-left transition-all active:scale-95 hover:border-orange-200 hover:shadow-sm",
+                  "flex flex-col p-2 bg-white border-2 border-gray-100 rounded-lg text-left transition-all active:scale-95 hover:border-orange-200 hover:shadow-sm",
                   (isLocked || !item.available) && "opacity-50 cursor-not-allowed",
                   actionLoading === `add-${item.id}` && "opacity-50"
                 )}
               >
                 {/* Item image */}
-                <div className="w-full aspect-square rounded-lg mb-2 overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+                <div className="w-full aspect-square rounded-lg mb-1.5 overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
                   {item.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.nextSibling as HTMLElement).style.display = "flex"; }} />
                   ) : null}
-                  <span className="text-2xl" style={{ display: item.image ? "none" : "flex" }}>
+                  <span className="text-xl" style={{ display: item.image ? "none" : "flex" }}>
                     {item.name.charAt(0)}
                   </span>
                 </div>
-                <div className="font-semibold text-gray-800 text-xs leading-tight line-clamp-2 mb-1">
+                <div className="font-bold text-gray-800 text-xs leading-tight line-clamp-2 mb-1">
                   {item.name}
                 </div>
                 <div className="font-bold text-orange-500 text-sm mt-auto">
@@ -1206,6 +1223,28 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
               />
             </div>
 
+            {/* Customer Credit Selection */}
+            {selectedPayment === "CUSTOMER_CREDIT" && (
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Select Customer *</label>
+                <select
+                  value={selectedCustomerId}
+                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+                >
+                  <option value="">{customersLoading ? "Loading..." : "Choose a customer"}</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.phone ? `(${c.phone})` : ""}
+                    </option>
+                  ))}
+                </select>
+                {customers.length === 0 && !customersLoading && (
+                  <p className="text-xs text-red-500 mt-1">No active customers found. Add customers in admin first.</p>
+                )}
+              </div>
+            )}
+
             {/* Partial Payment Toggle */}
             <div className="mb-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -1262,7 +1301,11 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
 
             <Button
               onClick={showPartialPayment ? handlePartialPayment : handleCompletePayment}
-              disabled={!!actionLoading || (showPartialPayment && (!partialAmount || parseFloat(partialAmount) <= 0 || parseFloat(partialAmount) > Math.max(0, total - livePaidAmount)))}
+              disabled={
+                !!actionLoading ||
+                (selectedPayment === "CUSTOMER_CREDIT" && !selectedCustomerId) ||
+                (showPartialPayment && (!partialAmount || parseFloat(partialAmount) <= 0 || parseFloat(partialAmount) > Math.max(0, total - livePaidAmount)))
+              }
               className="w-full h-12 bg-orange-500 hover:bg-orange-600 gap-2 text-base"
             >
               <CheckCircle2 className="w-5 h-5" />
@@ -1341,9 +1384,31 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
               />
             </div>
 
+            {/* Customer Credit Selection */}
+            {selectedPayment === "CUSTOMER_CREDIT" && (
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Select Customer *</label>
+                <select
+                  value={selectedCustomerId}
+                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+                >
+                  <option value="">{customersLoading ? "Loading..." : "Choose a customer"}</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.phone ? `(${c.phone})` : ""}
+                    </option>
+                  ))}
+                </select>
+                {customers.length === 0 && !customersLoading && (
+                  <p className="text-xs text-red-500 mt-1">No active customers found. Add customers in admin first.</p>
+                )}
+              </div>
+            )}
+
             <Button
               onClick={handleConfirmSplitSettle}
-              disabled={!!actionLoading}
+              disabled={!!actionLoading || (selectedPayment === "CUSTOMER_CREDIT" && !selectedCustomerId)}
               className="w-full h-12 bg-green-600 hover:bg-green-700 gap-2 text-base"
             >
               <CheckCircle2 className="w-5 h-5" />
