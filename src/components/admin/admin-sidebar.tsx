@@ -21,6 +21,12 @@ import {
   Truck,
   Scale,
   Boxes,
+  BedDouble,
+  CalendarCheck,
+  UserCheck,
+  FileText,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,8 +54,17 @@ const allNavItems = [
   { href: "/admin/settings", icon: Settings, label: "Settings", permission: "MANAGE_SETTINGS" },
 ];
 
+const hotelNavItems = [
+  { href: "/admin/hotel/rooms", icon: BedDouble, label: "Rooms", permission: "MANAGE_HOTEL_ROOMS" },
+  { href: "/admin/hotel/stays", icon: CalendarCheck, label: "Stays & Booking", permission: "MANAGE_HOTEL_STAYS" },
+  { href: "/admin/hotel/guests", icon: UserCheck, label: "Guests", permission: "MANAGE_HOTEL_GUESTS" },
+  { href: "/admin/hotel/folios", icon: FileText, label: "Folios", permission: "MANAGE_HOTEL_STAYS" },
+  { href: "/admin/hotel/analytics", icon: BarChart3, label: "Analytics", permission: "VIEW_HOTEL_ANALYTICS" },
+];
+
 function NavContent({
   navItems,
+  visibleHotelItems,
   pathname,
   restaurantName,
   adminName,
@@ -59,6 +74,7 @@ function NavContent({
   onLogout,
 }: {
   navItems: typeof allNavItems;
+  visibleHotelItems: typeof hotelNavItems;
   pathname: string;
   restaurantName: string;
   adminName: string;
@@ -67,6 +83,7 @@ function NavContent({
   onLinkClick: () => void;
   onLogout: () => void;
 }) {
+  const [hotelOpen, setHotelOpen] = useState(() => pathname.startsWith("/admin/hotel"));
   return (
     <>
       {/* Logo */}
@@ -109,6 +126,48 @@ function NavContent({
             </Link>
           );
         })}
+
+        {visibleHotelItems.length > 0 && (
+          <div>
+            <button
+              onClick={() => setHotelOpen((o) => !o)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium",
+                pathname.startsWith("/admin/hotel")
+                  ? "bg-orange-500/20 text-orange-400"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              )}
+            >
+              <BedDouble className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-left">Hotel</span>
+              {hotelOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+            {hotelOpen && (
+              <div className="ml-4 mt-1 space-y-1 border-l border-gray-700 pl-3">
+                {visibleHotelItems.map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      prefetch={true}
+                      onClick={onLinkClick}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-sm font-medium",
+                        isActive
+                          ? "bg-orange-500 text-white shadow-md"
+                          : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                      )}
+                    >
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Bottom: User + Logout */}
@@ -139,6 +198,9 @@ export function AdminSidebar({ adminName, restaurantName, role, permissions }: A
   const navItems = role === "ADMIN"
     ? allNavItems
     : allNavItems.filter(item => !item.permission || permissions.includes(item.permission));
+  const visibleHotelItems = role === "ADMIN"
+    ? hotelNavItems
+    : hotelNavItems.filter(item => !item.permission || permissions.includes(item.permission));
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -148,7 +210,7 @@ export function AdminSidebar({ adminName, restaurantName, role, permissions }: A
     await logout();
   };
 
-  const navProps = { navItems, pathname, restaurantName, adminName, role, loggingOut, onLinkClick: () => setMobileOpen(false), onLogout: handleLogout };
+  const navProps = { navItems, visibleHotelItems, pathname, restaurantName, adminName, role, loggingOut, onLinkClick: () => setMobileOpen(false), onLogout: handleLogout };
 
   return (
     <>

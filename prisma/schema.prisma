@@ -100,12 +100,59 @@ enum Permission {
   // Customer Credit
   MANAGE_CUSTOMERS
   MANAGE_CUSTOMER_CREDITS
+
+  // Hotel / Room Management
+  MANAGE_HOTEL_ROOMS
+  MANAGE_HOTEL_GUESTS
+  MANAGE_HOTEL_STAYS
+  MANAGE_HOTEL_SERVICES
+  VIEW_HOTEL_ANALYTICS
 }
 
 enum CreditStatus {
   PENDING
   PARTIALLY_PAID
   PAID
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  DIRTY
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+enum BookingSource {
+  WALK_IN
+  OTA
+  WEB
+}
+
+enum StayStatus {
+  UPCOMING
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum RoomServiceStatus {
+  ORDERED
+  PREPARING
+  IN_TRANSIT
+  DELIVERED
+}
+
+enum FolioItemType {
+  CHARGE
+  PAYMENT
+}
+
+enum VipTier {
+  STANDARD
+  SILVER
+  GOLD
+  PLATINUM
 }
 
 model User {
@@ -509,4 +556,93 @@ model RequisitionItem {
   notes           String?
   requisition     StockRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
   item            InventoryItem    @relation(fields: [itemId], references: [id])
+}
+
+// ── Hotel Management ─────────────────────────────────────────────────────────
+
+model Room {
+  id            String      @id @default(cuid())
+  number        String      @unique
+  floor         Int         @default(1)
+  type          String      @default("STANDARD") // STANDARD, DELUXE, SUITE, etc.
+  basePrice     Float       @default(0)
+  dynamicPrice  Float       @default(0)
+  status        RoomStatus  @default(AVAILABLE)
+  notes         String?
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  stays         Stay[]
+  services      RoomService[]
+}
+
+model Guest {
+  id          String    @id @default(cuid())
+  fullName    String
+  phone       String?
+  email       String?
+  idNumber    String?
+  idType      String?
+  vipTier     VipTier   @default(STANDARD)
+  notes       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  stays       Stay[]
+}
+
+model Stay {
+  id                String        @id @default(cuid())
+  roomId            String
+  guestId           String
+  bookingSource     BookingSource @default(WALK_IN)
+  scheduledCheckIn  DateTime
+  actualCheckIn     DateTime?
+  scheduledCheckOut DateTime?
+  actualCheckOut    DateTime?
+  lateCheckoutFee   Float         @default(0)
+  status            StayStatus    @default(UPCOMING)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  room              Room          @relation(fields: [roomId], references: [id])
+  guest             Guest         @relation(fields: [guestId], references: [id])
+  folioItems        FolioItem[]
+  services          RoomService[]
+}
+
+model RoomService {
+  id          String            @id @default(cuid())
+  stayId      String
+  roomId      String
+  orderItems  Json              // [{ menuItemId, name, price, qty, notes }]
+  total       Float             @default(0)
+  status      RoomServiceStatus @default(ORDERED)
+  orderedAt   DateTime          @default(now())
+  preparingAt DateTime?
+  inTransitAt DateTime?
+  deliveredAt DateTime?
+  deadline    DateTime?         // delivery deadline based on checkout
+  priority    Int               @default(0) // higher = more urgent
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  stay        Stay              @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  room        Room              @relation(fields: [roomId], references: [id])
+}
+
+model FolioItem {
+  id          String         @id @default(cuid())
+  stayId      String
+  type        FolioItemType  @default(CHARGE)
+  category    String         @default("ROOM") // ROOM, FB, SPA, LAUNDRY, MINIBAR, LATE_FEE
+  description String
+  amount      Float
+  isRoomBill  Boolean        @default(true) // true = room charge, false = incidental
+  isPaid      Boolean        @default(false)
+  paidAt      DateTime?
+  postedAt    DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  stay        Stay           @relation(fields: [stayId], references: [id], onDelete: Cascade)
 }

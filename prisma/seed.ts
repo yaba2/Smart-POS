@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TableStatus, Permission } from "@prisma/client";
+import { PrismaClient, Role, TableStatus, Permission, RoomStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -209,6 +209,32 @@ async function main() {
     });
   }
   console.log(`✅ ${defaultPaymentMethods.length} payment methods created`);
+
+  // Create default hotel rooms
+  const roomTypes = ["STANDARD", "DELUXE", "SUITE"];
+  const roomData: { number: string; floor: number; type: string; basePrice: number; dynamicPrice: number; status: RoomStatus }[] = [];
+  for (let floor = 1; floor <= 3; floor++) {
+    for (let i = 1; i <= 5; i++) {
+      const type = roomTypes[(i - 1) % roomTypes.length];
+      const basePrice = type === "STANDARD" ? 80 : type === "DELUXE" ? 120 : 180;
+      roomData.push({
+        number: `${floor}0${i}`,
+        floor,
+        type,
+        basePrice,
+        dynamicPrice: basePrice,
+        status: RoomStatus.AVAILABLE,
+      });
+    }
+  }
+  for (const room of roomData) {
+    await prisma.room.upsert({
+      where: { number: room.number },
+      update: {},
+      create: room,
+    });
+  }
+  console.log(`✅ ${roomData.length} hotel rooms created`);
 
   // Create default settings
   const settings = await prisma.settings.findFirst();
