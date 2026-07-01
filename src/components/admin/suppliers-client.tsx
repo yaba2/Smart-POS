@@ -19,6 +19,7 @@ import {
   RefreshCw, Search, X, CheckCircle2, XCircle, FileText, History,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface SuppliersClientProps {
   currencySymbol: string;
@@ -44,6 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
 export function SuppliersClient({ currencySymbol, canManage }: SuppliersClientProps) {
   const sym = currencySymbol || "$";
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void } | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -110,11 +112,18 @@ export function SuppliersClient({ currencySymbol, canManage }: SuppliersClientPr
       loadData();
     }
   };
-  const handleDeleteSupplier = async (id: string) => {
-    if (!confirm("Delete this supplier and all invoices?")) return;
-    const result = await deleteSupplier(id);
-    if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
-    else { toast({ title: "Supplier deleted", variant: "success" }); loadData(); }
+  const handleDeleteSupplier = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete this supplier?",
+      description: "All invoices for this supplier will also be deleted.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const result = await deleteSupplier(id);
+        if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        else { toast({ title: "Supplier deleted", variant: "success" }); loadData(); }
+      },
+    });
   };
 
   // Invoice CRUD
@@ -135,21 +144,28 @@ export function SuppliersClient({ currencySymbol, canManage }: SuppliersClientPr
     if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
     else { toast({ title: "Invoice created", variant: "success" }); setShowInvoiceModal(false); loadData(); }
   };
-  const handleDeleteInvoice = async (invoiceId: string) => {
-    if (!confirm("Delete this invoice and all its payments?")) return;
-    const result = await deleteInvoice(invoiceId);
-    if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
-    else {
-      toast({ title: "Invoice deleted", variant: "success" });
-      const updated = await getSuppliers();
-      if (!updated.error) {
-        setSuppliers(updated.suppliers || []);
-        if (invoicesSupplier) {
-          const s = updated.suppliers?.find((x: any) => x.id === invoicesSupplier.id);
-          if (s) setInvoicesSupplier(s);
+  const handleDeleteInvoice = (invoiceId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete this invoice?",
+      description: "All payments for this invoice will also be deleted.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const result = await deleteInvoice(invoiceId);
+        if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        else {
+          toast({ title: "Invoice deleted", variant: "success" });
+          const updated = await getSuppliers();
+          if (!updated.error) {
+            setSuppliers(updated.suppliers || []);
+            if (invoicesSupplier) {
+              const s = updated.suppliers?.find((x: any) => x.id === invoicesSupplier.id);
+              if (s) setInvoicesSupplier(s);
+            }
+          }
         }
-      }
-    }
+      },
+    });
   };
 
   // Invoice Payment
@@ -182,21 +198,28 @@ export function SuppliersClient({ currencySymbol, canManage }: SuppliersClientPr
       }
     }
   };
-  const handleDeletePayment = async (paymentId: string, invoiceId: string) => {
-    if (!confirm("Delete this payment?")) return;
-    const result = await deleteInvoicePayment(paymentId, invoiceId);
-    if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
-    else {
-      toast({ title: "Payment deleted", variant: "success" });
-      const updated = await getSuppliers();
-      if (!updated.error) {
-        setSuppliers(updated.suppliers || []);
-        if (invoicesSupplier) {
-          const s = updated.suppliers?.find((x: any) => x.id === invoicesSupplier.id);
-          if (s) setInvoicesSupplier(s);
+  const handleDeletePayment = (paymentId: string, invoiceId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete this payment?",
+      description: "This action cannot be undone.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const result = await deleteInvoicePayment(paymentId, invoiceId);
+        if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        else {
+          toast({ title: "Payment deleted", variant: "success" });
+          const updated = await getSuppliers();
+          if (!updated.error) {
+            setSuppliers(updated.suppliers || []);
+            if (invoicesSupplier) {
+              const s = updated.suppliers?.find((x: any) => x.id === invoicesSupplier.id);
+              if (s) setInvoicesSupplier(s);
+            }
+          }
         }
-      }
-    }
+      },
+    });
   };
 
   const filtered = suppliers.filter((s) =>
@@ -593,6 +616,16 @@ export function SuppliersClient({ currencySymbol, canManage }: SuppliersClientPr
             </div>
           </div>
         </div>
+      )}
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Delete"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

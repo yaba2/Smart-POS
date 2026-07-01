@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, LogIn, LogOut, Ban, Trash2, Search, Key, UserPlus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -28,6 +29,7 @@ interface StaysClientProps {
 
 export function StaysClient({ stays: initialStays, rooms, guests: initialGuests, canManage, defaultRoomId }: StaysClientProps) {
   const [stays, setStays] = useState<any[]>(initialStays);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void } | null>(null);
   const [guests, setGuests] = useState<any[]>(initialGuests);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(!!defaultRoomId);
@@ -104,18 +106,32 @@ export function StaysClient({ stays: initialStays, rooms, guests: initialGuests,
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Cancel this stay?")) return;
-    const result = await cancelStay(id);
-    if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
-    else { toast({ title: "Stay cancelled", variant: "success" }); setStays((prev) => prev.map((s) => s.id === id ? { ...s, status: "CANCELLED" } : s)); }
+  const handleCancel = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Cancel this stay?",
+      description: "The stay will be marked as cancelled.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const result = await cancelStay(id);
+        if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        else { toast({ title: "Stay cancelled", variant: "success" }); setStays((prev) => prev.map((s) => s.id === id ? { ...s, status: "CANCELLED" } : s)); }
+      },
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this stay?")) return;
-    const result = await deleteStay(id);
-    if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
-    else { toast({ title: "Stay deleted", variant: "success" }); setStays((prev) => prev.filter((s) => s.id !== id)); }
+  const handleDelete = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete this stay?",
+      description: "This will permanently delete the stay record.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const result = await deleteStay(id);
+        if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        else { toast({ title: "Stay deleted", variant: "success" }); setStays((prev) => prev.filter((s) => s.id !== id)); }
+      },
+    });
   };
 
   const handleGuestSubmit = async (e: React.FormEvent) => {
@@ -310,6 +326,16 @@ export function StaysClient({ stays: initialStays, rooms, guests: initialGuests,
           </form>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Confirm"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

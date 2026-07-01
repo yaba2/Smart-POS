@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Shield, User, KeyRound, Briefcase } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: "bg-red-100 text-red-700",
@@ -139,6 +140,7 @@ const emptyForm = { name: "", role: "WAITER" as "WAITER" | "CASHIER" | "MANAGER"
 export function UsersClient({ users: initialUsers }: UsersClientProps) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string; name: string } | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [showPermsDialog, setShowPermsDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
@@ -218,10 +220,13 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
     setSelectedPerms([...defaults]);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete user "${name}"?`)) return;
+  const handleDelete = (id: string, name: string) => {
+    setConfirmDialog({ open: true, id, name });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     await deleteUser(id);
-    // Update local state immediately
     setUsers(users.filter(u => u.id !== id));
     toast({ title: "User deleted" });
   };
@@ -412,6 +417,16 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={`Delete user "${confirmDialog.name}"?`}
+          description="This will permanently remove the user account."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

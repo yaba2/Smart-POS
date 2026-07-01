@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, Search, Crown } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const VIP_TIERS = ["STANDARD", "SILVER", "GOLD", "PLATINUM"];
 
@@ -19,6 +20,7 @@ interface GuestsClientProps {
 
 export function GuestsClient({ guests: initialGuests, canManage }: GuestsClientProps) {
   const [guests, setGuests] = useState<any[]>(initialGuests);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string } | null>(null);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingGuest, setEditingGuest] = useState<any | null>(null);
@@ -58,8 +60,12 @@ export function GuestsClient({ guests: initialGuests, canManage }: GuestsClientP
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this guest?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({ open: true, id });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     const result = await deleteGuest(id);
     if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
     else { toast({ title: "Guest deleted", variant: "success" }); setGuests((prev) => prev.filter((g) => g.id !== id)); }
@@ -133,6 +139,16 @@ export function GuestsClient({ guests: initialGuests, canManage }: GuestsClientP
           </form>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title="Delete guest?"
+          description="This will permanently delete the guest record."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

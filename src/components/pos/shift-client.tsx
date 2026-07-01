@@ -6,6 +6,7 @@ import Link from "next/link";
 import { openShift, closeShift } from "@/actions/shifts";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ export function ShiftClient({ currentShift, shifts, currencySymbol, userName, mo
   const sym = currencySymbol || "$";
   const tz = -new Date().getTimezoneOffset(); // e.g. +180 for UTC+3
   const [loading, setLoading] = useState(false);
+  const [confirmCloseShift, setConfirmCloseShift] = useState(false);
   const [shiftType, setShiftType] = useState<"MORNING" | "EVENING">("MORNING");
   const [openingCash, setOpeningCash] = useState("");
   const [closingCash, setClosingCash] = useState("");
@@ -71,8 +73,12 @@ export function ShiftClient({ currentShift, shifts, currencySymbol, userName, mo
     }
   };
 
-  const handleCloseShift = async () => {
-    if (!confirm("Close this shift?")) return;
+  const handleCloseShift = () => {
+    setConfirmCloseShift(true);
+  };
+
+  const doCloseShift = async () => {
+    setConfirmCloseShift(false);
     const cash = parseFloat(closingCash) || 0;
     setLoading(true);
     try {
@@ -308,6 +314,14 @@ export function ShiftClient({ currentShift, shifts, currencySymbol, userName, mo
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog
+        open={confirmCloseShift}
+        title="Close this shift?"
+        description="The shift will be closed and totals will be locked."
+        confirmLabel="Close Shift"
+        onConfirm={doCloseShift}
+        onCancel={() => setConfirmCloseShift(false)}
+      />
     </div>
   );
 }

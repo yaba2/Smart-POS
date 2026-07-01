@@ -11,6 +11,7 @@ import {
   Plus, Phone, Mail, MapPin, Trash2, Pencil, Search, X, Users,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface CustomersClientProps {
   currencySymbol: string;
@@ -24,6 +25,7 @@ function formatMoney(n: number, sym: string) {
 export function CustomersClient({ currencySymbol, canManage }: CustomersClientProps) {
   const sym = currencySymbol || "$";
   const [customers, setCustomers] = useState<any[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -88,8 +90,12 @@ export function CustomersClient({ currencySymbol, canManage }: CustomersClientPr
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this customer? Their credit history will also be deleted.")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({ open: true, id });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     const result = await deleteCustomer(id);
     if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
     else { toast({ title: "Customer deleted", variant: "success" }); loadData(); }
@@ -217,6 +223,16 @@ export function CustomersClient({ currencySymbol, canManage }: CustomersClientPr
             </form>
           </div>
         </div>
+      )}
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title="Delete customer?"
+          description="Their credit history will also be deleted."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

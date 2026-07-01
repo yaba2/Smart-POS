@@ -16,6 +16,7 @@ import {
   RefreshCw, Search, X,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ExpensesClientProps {
   currencySymbol: string;
@@ -45,6 +46,7 @@ function todayStr() { return toDateStr(new Date()); }
 export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProps) {
   const sym = currencySymbol || "$";
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string } | null>(null);
   const [summary, setSummary] = useState({ total: 0, count: 0, byCategory: [] as any[] });
   const [loading, setLoading] = useState(false);
   const [from, setFrom] = useState(todayStr());
@@ -124,8 +126,12 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this expense?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({ open: true, id });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     const result = await deleteExpense(id);
     if (result.error) {
       toast({ title: "Error", description: String(result.error), variant: "destructive" });
@@ -420,6 +426,16 @@ export function ExpensesClient({ currencySymbol, canManage }: ExpensesClientProp
             </form>
           </div>
         </div>
+      )}
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title="Delete this expense?"
+          description="This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

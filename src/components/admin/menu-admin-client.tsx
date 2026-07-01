@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, UtensilsCrossed, Tag, Settings2, ChevronDown, ChevronUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Category {
   id: string;
@@ -83,6 +84,7 @@ const PRINTER_OPTIONS = ["KITCHEN", "BAR", "CASHIER", "RECEIPT"];
 
 export function MenuAdminClient({ categories: initCategories, items: initItems, modifierGroups: initModGroups }: MenuAdminClientProps) {
   const router = useRouter();
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void } | null>(null);
   const [activeTab, setActiveTab] = useState<"categories" | "items" | "modifiers">("items");
   const [filterCategory, setFilterCategory] = useState("all");
 
@@ -139,11 +141,13 @@ export function MenuAdminClient({ categories: initCategories, items: initItems, 
       router.refresh();
     } finally { setLoading(false); }
   };
-  const handleDeleteCat = async (id: string, name: string) => {
-    if (!confirm(`Delete category "${name}"? All items will also be deleted.`)) return;
-    await deleteCategory(id);
-    toast({ title: "Category deleted" });
-    router.refresh();
+  const handleDeleteCat = (id: string, name: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Delete category "${name}"?`,
+      description: "All menu items in this category will also be deleted.",
+      onConfirm: async () => { setConfirmDialog(null); await deleteCategory(id); toast({ title: "Category deleted" }); router.refresh(); },
+    });
   };
 
   // Item handlers
@@ -175,11 +179,13 @@ export function MenuAdminClient({ categories: initCategories, items: initItems, 
       router.refresh();
     } finally { setLoading(false); }
   };
-  const handleDeleteItem = async (id: string, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
-    await deleteMenuItem(id);
-    toast({ title: "Item deleted" });
-    router.refresh();
+  const handleDeleteItem = (id: string, name: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Delete "${name}"?`,
+      description: "This menu item will be permanently removed.",
+      onConfirm: async () => { setConfirmDialog(null); await deleteMenuItem(id); toast({ title: "Item deleted" }); router.refresh(); },
+    });
   };
   const handleToggleItem = async (id: string, available: boolean) => {
     await toggleMenuItemAvailability(id, available);
@@ -208,11 +214,13 @@ export function MenuAdminClient({ categories: initCategories, items: initItems, 
       router.refresh();
     } finally { setLoading(false); }
   };
-  const handleDeleteModGroup = async (id: string, name: string) => {
-    if (!confirm(`Delete modifier group "${name}"?`)) return;
-    await deleteModifierGroup(id);
-    toast({ title: "Deleted" });
-    router.refresh();
+  const handleDeleteModGroup = (id: string, name: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Delete modifier group "${name}"?`,
+      description: "All modifier options in this group will also be removed.",
+      onConfirm: async () => { setConfirmDialog(null); await deleteModifierGroup(id); toast({ title: "Deleted" }); router.refresh(); },
+    });
   };
 
   const handleAddModItem = async (groupId: string) => {
@@ -664,6 +672,16 @@ export function MenuAdminClient({ categories: initCategories, items: initItems, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Delete"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

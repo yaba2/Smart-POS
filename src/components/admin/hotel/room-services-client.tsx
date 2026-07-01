@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, ChefHat, Truck, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const STATUS_ICONS: Record<string, any> = {
   ORDERED: Clock,
@@ -28,6 +29,7 @@ interface RoomServicesClientProps {
 
 export function RoomServicesClient({ services: initialServices, canManage }: RoomServicesClientProps) {
   const [services, setServices] = useState<any[]>(initialServices);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   const handleStatusChange = async (id: string, status: string) => {
@@ -36,8 +38,12 @@ export function RoomServicesClient({ services: initialServices, canManage }: Roo
     else setServices((prev) => prev.map((s) => s.id === id ? { ...s, status } : s));
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this room service order?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({ open: true, id });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     const result = await deleteRoomService(id);
     if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
     else { toast({ title: "Order deleted", variant: "success" }); setServices((prev) => prev.filter((s) => s.id !== id)); }
@@ -102,6 +108,16 @@ export function RoomServicesClient({ services: initialServices, canManage }: Roo
           );
         })}
       </div>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title="Delete room service order?"
+          description="This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

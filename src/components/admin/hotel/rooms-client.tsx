@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, Bed, Sparkles, Wrench, Ban, CalendarCheck } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const STATUS_COLORS: Record<string, string> = {
   AVAILABLE: "bg-green-100 border-green-300 text-green-800",
@@ -28,6 +29,7 @@ interface RoomsClientProps {
 export function RoomsClient({ rooms: initialRooms, canManage }: RoomsClientProps) {
   const router = useRouter();
   const [rooms, setRooms] = useState<any[]>(initialRooms);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: string } | null>(null);
   const [view, setView] = useState<"floor" | "list">("floor");
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any | null>(null);
@@ -77,8 +79,12 @@ export function RoomsClient({ rooms: initialRooms, canManage }: RoomsClientProps
     else setRooms((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this room?")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({ open: true, id });
+  };
+
+  const doDelete = async (id: string) => {
+    setConfirmDialog(null);
     const result = await deleteRoom(id);
     if (result.error) toast({ title: "Error", description: String(result.error), variant: "destructive" });
     else { toast({ title: "Room deleted", variant: "success" }); setRooms((prev) => prev.filter((r) => r.id !== id)); }
@@ -105,33 +111,33 @@ export function RoomsClient({ rooms: initialRooms, canManage }: RoomsClientProps
           {floors.map((floor) => (
             <div key={floor}>
               <h3 className="text-sm font-semibold text-gray-600 mb-2">Floor {floor}</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {rooms.filter((r) => r.floor === floor).map((room) => (
                   <Card key={room.id} className={`border-2 cursor-pointer hover:shadow-md transition-shadow ${STATUS_COLORS[room.status]}`}>
-                    <CardContent className="p-2">
+                    <CardContent className="p-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-sm">{room.number}</span>
-                        <span className={`text-[9px] font-semibold px-1 py-0.5 rounded-full ${STATUS_COLORS[room.status]}`}>{room.status === "OUT_OF_SERVICE" ? "OOS" : room.status.replace("_", " ").slice(0, 4)}</span>
+                        <span className="font-extrabold text-base">{room.number}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_COLORS[room.status]}`}>{room.status === "OUT_OF_SERVICE" ? "OOS" : room.status.replace("_", " ").slice(0, 4)}</span>
                       </div>
-                      <p className="text-[10px] text-gray-500 mt-0.5 truncate">{room.type}</p>
-                      <p className="text-[10px] font-medium">${room.dynamicPrice}</p>
-                      {room.stays?.[0]?.guest && <p className="text-[10px] italic truncate mt-0.5">{room.stays[0].guest.fullName}</p>}
+                      <p className="text-xs font-semibold text-gray-500 mt-1 truncate">{room.type}</p>
+                      <p className="text-xs font-bold mt-0.5">${room.dynamicPrice}</p>
+                      {room.stays?.[0]?.guest && <p className="text-xs font-semibold italic truncate mt-1">{room.stays[0].guest.fullName}</p>}
                       {canManage && (
-                        <div className="flex items-center justify-between mt-1.5 gap-1">
-                          <div className="flex gap-0.5">
-                            {room.status === "DIRTY" && <button title="Mark Clean" className="text-yellow-700 hover:text-yellow-900" onClick={() => handleStatus(room.id, "AVAILABLE")}><Sparkles className="w-3 h-3" /></button>}
-                            {room.status === "AVAILABLE" && <button title="Maintenance" className="text-gray-500 hover:text-gray-700" onClick={() => handleStatus(room.id, "MAINTENANCE")}><Wrench className="w-3 h-3" /></button>}
-                            {room.status === "MAINTENANCE" && <button title="Mark Ready" className="text-blue-600 hover:text-blue-800" onClick={() => handleStatus(room.id, "AVAILABLE")}><Bed className="w-3 h-3" /></button>}
-                            <button title="Edit" className="text-gray-400 hover:text-gray-700" onClick={() => openEdit(room)}><Pencil className="w-3 h-3" /></button>
-                            <button title="Delete" className="text-red-400 hover:text-red-600" onClick={() => handleDelete(room.id)}><Ban className="w-3 h-3" /></button>
+                        <div className="flex items-center justify-between mt-2 gap-1">
+                          <div className="flex gap-1">
+                            {room.status === "DIRTY" && <button title="Mark Clean" className="text-yellow-700 hover:text-yellow-900" onClick={() => handleStatus(room.id, "AVAILABLE")}><Sparkles className="w-4 h-4" /></button>}
+                            {room.status === "AVAILABLE" && <button title="Maintenance" className="text-gray-500 hover:text-gray-700" onClick={() => handleStatus(room.id, "MAINTENANCE")}><Wrench className="w-4 h-4" /></button>}
+                            {room.status === "MAINTENANCE" && <button title="Mark Ready" className="text-blue-600 hover:text-blue-800" onClick={() => handleStatus(room.id, "AVAILABLE")}><Bed className="w-4 h-4" /></button>}
+                            <button title="Edit" className="text-gray-400 hover:text-gray-700" onClick={() => openEdit(room)}><Pencil className="w-4 h-4" /></button>
+                            <button title="Delete" className="text-red-400 hover:text-red-600" onClick={() => handleDelete(room.id)}><Ban className="w-4 h-4" /></button>
                           </div>
                           {room.status === "AVAILABLE" && (
                             <button
                               title="Book this room"
                               onClick={() => router.push(`/admin/hotel/stays?roomId=${room.id}`)}
-                              className="flex items-center gap-0.5 text-[10px] font-semibold bg-green-600 text-white px-1.5 py-0.5 rounded hover:bg-green-700"
+                              className="flex items-center gap-1 text-xs font-bold bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
                             >
-                              <CalendarCheck className="w-2.5 h-2.5" /> Book
+                              <CalendarCheck className="w-3.5 h-3.5" /> Book
                             </button>
                           )}
                         </div>
@@ -187,6 +193,16 @@ export function RoomsClient({ rooms: initialRooms, canManage }: RoomsClientProps
           </form>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title="Delete this room?"
+          description="This will permanently delete the room and all associated data."
+          confirmLabel="Delete"
+          onConfirm={() => doDelete(confirmDialog.id)}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

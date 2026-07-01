@@ -8,6 +8,7 @@ import {
   getAllInventoryItems,
 } from "@/actions/inventory";
 import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,6 +109,7 @@ export function InventoryClient({
 }: InventoryClientProps) {
   const [tab, setTab] = useState<"items" | "transactions" | "requisitions">("items");
   const [items, setItems] = useState(initialItems);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void } | null>(null);
   const [transactions, setTransactions] = useState(initialTransactions);
   const [requisitions, setRequisitions] = useState(initialRequisitions);
   const [stats, setStats] = useState(initialStats);
@@ -213,12 +215,18 @@ export function InventoryClient({
     } finally { setLoading(false); }
   };
 
-  const handleDeleteItem = async (item: InventoryItem) => {
-    if (!confirm(`Archive "${item.name}"?`)) return;
-    await deleteInventoryItem(item.id);
-    setItems(items.filter(i => i.id !== item.id));
-    await refreshStats();
-    toast({ title: "Item archived" });
+  const handleDeleteItem = (item: InventoryItem) => {
+    setConfirmDialog({
+      open: true,
+      title: `Archive "${item.name}"?`,
+      description: "The item will be removed from the inventory list.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        await deleteInventoryItem(item.id);
+        setItems(items.filter(i => i.id !== item.id));
+        await refreshStats();
+      },
+    });
   };
 
   // ── Transactions ──────────────────────────────────────────────────────────
@@ -308,13 +316,18 @@ export function InventoryClient({
     } finally { setLoading(false); }
   };
 
-  const handleDeleteReq = async (id: string) => {
-    if (!confirm("Delete this requisition?")) return;
-    const r = await deleteRequisition(id);
-    if ("error" in r) { toast({ title: r.error, variant: "destructive" }); return; }
-    setRequisitions(prev => prev.filter(r2 => r2.id !== id));
-    await refreshStats();
-    toast({ title: "Requisition deleted" });
+  const handleDeleteReq = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete this requisition?",
+      description: "This action cannot be undone.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const r = await deleteRequisition(id);
+        if ("error" in r) { toast({ title: r.error, variant: "destructive" }); return; }
+        setRequisitions(prev => prev.filter(r2 => r2.id !== id));
+      },
+    });
   };
 
   return (
@@ -805,6 +818,16 @@ export function InventoryClient({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Confirm"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

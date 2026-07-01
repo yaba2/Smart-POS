@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Table2, Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 type TableStatus = "AVAILABLE" | "OCCUPIED" | "WAITING_PAYMENT";
@@ -39,6 +40,7 @@ const statusLabels: Record<TableStatus, { label: string; variant: "success" | "w
 
 export function TablesAdminClient({ tables: initialTables }: TablesAdminClientProps) {
   const router = useRouter();
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void } | null>(null);
 
   // Table dialog
   const [showDialog, setShowDialog] = useState(false);
@@ -95,11 +97,13 @@ export function TablesAdminClient({ tables: initialTables }: TablesAdminClientPr
     }
   };
 
-  const handleDelete = async (id: string, tname: string) => {
-    if (!confirm(`Delete table "${tname}"?`)) return;
-    await deleteTable(id);
-    toast({ title: "Table deleted" });
-    router.refresh();
+  const handleDelete = (id: string, tname: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Delete table "${tname}"?`,
+      description: "This will permanently remove the table.",
+      onConfirm: async () => { setConfirmDialog(null); await deleteTable(id); toast({ title: "Table deleted" }); router.refresh(); },
+    });
   };
 
   const openFloorEdit = (f: string) => {
@@ -141,11 +145,13 @@ export function TablesAdminClient({ tables: initialTables }: TablesAdminClientPr
     }
   };
 
-  const handleDeleteFloor = async (f: string) => {
-    if (!confirm(`Delete floor "${f}"? Tables will stay but won't be assigned to any floor.`)) return;
-    await deleteFloor(f);
-    toast({ title: `Floor "${f}" deleted` });
-    router.refresh();
+  const handleDeleteFloor = (f: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Delete floor "${f}"?`,
+      description: "Tables will stay but won't be assigned to any floor.",
+      onConfirm: async () => { setConfirmDialog(null); await deleteFloor(f); toast({ title: `Floor "${f}" deleted` }); router.refresh(); },
+    });
   };
 
   // Group tables: by floor, then unassigned
@@ -313,6 +319,16 @@ export function TablesAdminClient({ tables: initialTables }: TablesAdminClientPr
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Delete"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }
