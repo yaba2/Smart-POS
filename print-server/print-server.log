@@ -1,0 +1,324 @@
+[2026-07-03T14:55:24.723Z] [INFO] [Print Server] ws:// listening on port 9090
+[2026-07-03T14:55:24.733Z] [INFO] [Print Server] Printer config:
+[2026-07-03T14:55:24.745Z] [INFO]   KITCHEN: USB → "POS-58C" (port: USB002)
+[2026-07-03T14:55:24.748Z] [INFO]   BAR: USB → "POS-58C" (port: USB002)
+[2026-07-03T14:55:24.768Z] [INFO]   BILL: USB → "POS-58C" (port: USB002)
+[2026-07-05T11:11:35.846Z] [INFO] [Print Server] ws:// listening on port 9090
+[2026-07-05T11:11:35.851Z] [INFO] [Print Server] Printer config:
+[2026-07-05T11:11:35.855Z] [INFO]   KITCHEN: USB → "POS-58C" (port: USB002)
+[2026-07-05T11:11:35.860Z] [INFO]   BAR: USB → "POS-58C" (port: USB002)
+[2026-07-05T11:11:35.867Z] [INFO]   BILL: USB → "POS-58C" (port: USB002)
+[2026-07-05T11:11:41.710Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:11:41.751Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:11:41.850Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:11:48.626Z] [INFO] [Print Server] Job queued: job-1783249908585-7xrqrunum → BILL
+[2026-07-05T11:11:48.641Z] [INFO] [Print Server] Printing job job-1783249908585-7xrqrunum → USB "POS-58C" port "USB002" (attempt 1)
+[2026-07-05T11:11:49.417Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:11:50.569Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:11:51.572Z] [INFO] [Print Server] Printing job job-1783249908585-7xrqrunum → USB "POS-58C" port "USB002" (attempt 2)
+[2026-07-05T11:11:52.294Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:11:54.295Z] [INFO] [Print Server] Printing job job-1783249908585-7xrqrunum → USB "POS-58C" port "USB002" (attempt 3)
+[2026-07-05T11:11:54.711Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:11:54.713Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783249908585-7xrqrunum
+[2026-07-05T11:16:51.565Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:17:00.998Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:17:09.616Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:17:09.669Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:17:09.741Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:17:19.903Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:17:31.052Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:17:31.071Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:17:31.115Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:17:33.812Z] [INFO] [Print Server] Job queued: job-1783250253809-204veoc6u → BILL
+[2026-07-05T11:17:33.875Z] [INFO] [Print Server] Printing job job-1783250253809-204veoc6u → USB "POS-58C" port "USB002" (attempt 1)
+[2026-07-05T11:17:34.127Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:17:35.060Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:17:36.145Z] [INFO] [Print Server] Printing job job-1783250253809-204veoc6u → USB "POS-58C" port "USB002" (attempt 2)
+[2026-07-05T11:17:36.542Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:17:38.635Z] [INFO] [Print Server] Printing job job-1783250253809-204veoc6u → USB "POS-58C" port "USB002" (attempt 3)
+[2026-07-05T11:17:39.093Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:17:39.095Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783250253809-204veoc6u
+[2026-07-05T11:19:27.738Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:19:36.588Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:21:13.404Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:21:13.411Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:21:13.433Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:21:20.127Z] [INFO] [Print Server] Job queued: job-1783250480074-szyov16hm → KITCHEN
+[2026-07-05T11:21:20.170Z] [INFO] [Print Server] Printing job job-1783250480074-szyov16hm → USB "POS-58C" port "USB002" (attempt 1)
+[2026-07-05T11:21:20.390Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:21:21.090Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:21:22.100Z] [INFO] [Print Server] Printing job job-1783250480074-szyov16hm → USB "POS-58C" port "USB002" (attempt 2)
+[2026-07-05T11:21:22.497Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:21:24.499Z] [INFO] [Print Server] Printing job job-1783250480074-szyov16hm → USB "POS-58C" port "USB002" (attempt 3)
+[2026-07-05T11:21:24.891Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:21:24.892Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783250480074-szyov16hm
+[2026-07-05T11:27:26.769Z] [INFO] [Print Server] ws:// listening on port 9090
+[2026-07-05T11:27:26.772Z] [INFO] [Print Server] Printer config:
+[2026-07-05T11:27:26.773Z] [INFO]   KITCHEN: USB → "Kitcken" (port: USB003)
+[2026-07-05T11:27:26.775Z] [INFO]   BAR: USB → "POS-80" (port: USB003)
+[2026-07-05T11:27:26.777Z] [INFO]   BILL: USB → "POS-80" (port: USB003)
+[2026-07-05T11:28:57.359Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:29:11.260Z] [INFO] [Print Server] Job queued: job-1783250951253-g71uz1ytj → KITCHEN
+[2026-07-05T11:29:11.272Z] [INFO] [Print Server] Printing job job-1783250951253-g71uz1ytj → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:29:11.462Z] [INFO] [Print Server] Job queued: job-1783250951255-gwk3xync7 → BAR
+[2026-07-05T11:29:11.476Z] [INFO] [Print Server] Printing job job-1783250951255-gwk3xync7 → USB "POS-80" port "USB003" (attempt 1)
+[2026-07-05T11:29:11.698Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:29:12.214Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:12.642Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:29:13.318Z] [INFO] [Print Server] Printing job job-1783250951255-gwk3xync7 → USB "POS-80" port "USB003" (attempt 2)
+[2026-07-05T11:29:13.658Z] [INFO] [Print Server] Printing job job-1783250951253-g71uz1ytj → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:29:13.722Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:14.456Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:29:15.725Z] [INFO] [Print Server] Printing job job-1783250951255-gwk3xync7 → USB "POS-80" port "USB003" (attempt 3)
+[2026-07-05T11:29:16.026Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:16.027Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783250951255-gwk3xync7
+[2026-07-05T11:29:16.459Z] [INFO] [Print Server] Printing job job-1783250951253-g71uz1ytj → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:29:16.892Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:29:16.894Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783250951253-g71uz1ytj
+[2026-07-05T11:29:50.502Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:29:50.520Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:29:50.669Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:29:55.405Z] [INFO] [Print Server] Job queued: job-1783250995339-3eht3ffbe → BILL
+[2026-07-05T11:29:55.407Z] [INFO] [Print Server] Printing job job-1783250995339-3eht3ffbe → USB "POS-80" port "USB003" (attempt 1)
+[2026-07-05T11:29:55.692Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:29:56.174Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:57.177Z] [INFO] [Print Server] Printing job job-1783250995339-3eht3ffbe → USB "POS-80" port "USB003" (attempt 2)
+[2026-07-05T11:29:57.474Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:59.484Z] [INFO] [Print Server] Printing job job-1783250995339-3eht3ffbe → USB "POS-80" port "USB003" (attempt 3)
+[2026-07-05T11:29:59.769Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:29:59.770Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783250995339-3eht3ffbe
+[2026-07-05T11:30:15.035Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:30:15.138Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:30:15.158Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:30:35.096Z] [INFO] [Print Server] Job queued: job-1783251035094-ry53qkqak → BAR
+[2026-07-05T11:30:35.101Z] [INFO] [Print Server] Printing job job-1783251035094-ry53qkqak → USB "POS-80" port "USB003" (attempt 1)
+[2026-07-05T11:30:35.517Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:30:35.775Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:30:36.545Z] [INFO] [Print Server] Printing job job-1783251035094-ry53qkqak → USB "POS-80" port "USB003" (attempt 2)
+[2026-07-05T11:30:36.835Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:30:38.846Z] [INFO] [Print Server] Printing job job-1783251035094-ry53qkqak → USB "POS-80" port "USB003" (attempt 3)
+[2026-07-05T11:30:39.114Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:30:39.115Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251035094-ry53qkqak
+[2026-07-05T11:34:30.900Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:34:30.913Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:34:30.951Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:34:34.679Z] [INFO] [Print Server] Job queued: job-1783251274671-vkwhnti7m → BILL
+[2026-07-05T11:34:34.701Z] [INFO] [Print Server] Printing job job-1783251274671-vkwhnti7m → USB "POS-80" port "USB003" (attempt 1)
+[2026-07-05T11:34:35.083Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:34:35.330Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:34:36.086Z] [INFO] [Print Server] Printing job job-1783251274671-vkwhnti7m → USB "POS-80" port "USB003" (attempt 2)
+[2026-07-05T11:34:36.346Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:34:38.362Z] [INFO] [Print Server] Printing job job-1783251274671-vkwhnti7m → USB "POS-80" port "USB003" (attempt 3)
+[2026-07-05T11:34:38.621Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (1801, 'OpenPrinter', 'The printer name is invalid.')
+[2026-07-05T11:34:38.622Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251274671-vkwhnti7m
+[2026-07-05T11:35:31.614Z] [INFO] [Print Server] ws:// listening on port 9090
+[2026-07-05T11:35:31.617Z] [INFO] [Print Server] Printer config:
+[2026-07-05T11:35:31.619Z] [INFO]   KITCHEN: USB → "Kitcken" (port: USB003)
+[2026-07-05T11:35:31.621Z] [INFO]   BAR: USB → "Kitcken" (port: USB003)
+[2026-07-05T11:35:31.655Z] [INFO]   BILL: USB → "Kitcken" (port: USB003)
+[2026-07-05T11:35:42.932Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:35:42.941Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:35:43.167Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:35:46.987Z] [INFO] [Print Server] Job queued: job-1783251346980-wiug7part → BILL
+[2026-07-05T11:35:47.032Z] [INFO] [Print Server] Printing job job-1783251346980-wiug7part → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:35:47.382Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:35:48.356Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:35:49.379Z] [INFO] [Print Server] Printing job job-1783251346980-wiug7part → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:35:50.030Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:35:52.034Z] [INFO] [Print Server] Printing job job-1783251346980-wiug7part → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:35:52.499Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:35:52.502Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251346980-wiug7part
+[2026-07-05T11:36:15.462Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:15.496Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:15.664Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:36:27.826Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:36:33.744Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:33.750Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:36:33.767Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:39.771Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:36:47.245Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:47.253Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:36:47.262Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:36:57.413Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:37:11.401Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:37:21.719Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:37:29.682Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:37:29.692Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:37:29.698Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:38:27.233Z] [INFO] [Print Server] Job queued: job-1783251507232-yzcs9fzmg → KITCHEN
+[2026-07-05T11:38:27.238Z] [INFO] [Print Server] Printing job job-1783251507232-yzcs9fzmg → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:38:27.304Z] [INFO] [Print Server] Job queued: job-1783251507233-xqqim0ife → BAR
+[2026-07-05T11:38:27.305Z] [INFO] [Print Server] Printing job job-1783251507233-xqqim0ife → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:38:27.701Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:38:28.535Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:28.577Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:29.537Z] [INFO] [Print Server] Printing job job-1783251507233-xqqim0ife → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:38:29.710Z] [INFO] [Print Server] Printing job job-1783251507232-yzcs9fzmg → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:38:30.551Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:30.575Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:32.598Z] [INFO] [Print Server] Printing job job-1783251507233-xqqim0ife → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:38:32.700Z] [INFO] [Print Server] Printing job job-1783251507232-yzcs9fzmg → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:38:33.215Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:33.226Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251507233-xqqim0ife
+[2026-07-05T11:38:33.270Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:38:33.271Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251507232-yzcs9fzmg
+[2026-07-05T11:39:24.885Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:39:24.987Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:39:25.001Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:39:30.835Z] [INFO] [Print Server] Job queued: job-1783251570830-a2mwqkdqk → BILL
+[2026-07-05T11:39:30.928Z] [INFO] [Print Server] Printing job job-1783251570830-a2mwqkdqk → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:39:31.440Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:39:32.584Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:39:33.585Z] [INFO] [Print Server] Printing job job-1783251570830-a2mwqkdqk → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:39:34.103Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:39:36.107Z] [INFO] [Print Server] Printing job job-1783251570830-a2mwqkdqk → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:39:36.584Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:39:36.586Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251570830-a2mwqkdqk
+[2026-07-05T11:40:48.268Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:40:48.285Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:40:48.346Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:41:11.281Z] [INFO] [Print Server] Job queued: job-1783251671279-3ytkih91h → KITCHEN
+[2026-07-05T11:41:11.325Z] [INFO] [Print Server] Printing job job-1783251671279-3ytkih91h → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:41:11.494Z] [INFO] [Print Server] Job queued: job-1783251671280-nkvksldf4 → BAR
+[2026-07-05T11:41:11.514Z] [INFO] [Print Server] Printing job job-1783251671280-nkvksldf4 → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:41:11.885Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:41:12.448Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:12.666Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:13.450Z] [INFO] [Print Server] Printing job job-1783251671279-3ytkih91h → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:41:13.668Z] [INFO] [Print Server] Printing job job-1783251671280-nkvksldf4 → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:41:13.986Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:14.277Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:15.990Z] [INFO] [Print Server] Printing job job-1783251671279-3ytkih91h → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:41:16.279Z] [INFO] [Print Server] Printing job job-1783251671280-nkvksldf4 → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:41:16.468Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:16.470Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251671279-3ytkih91h
+[2026-07-05T11:41:16.766Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:41:16.767Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783251671280-nkvksldf4
+[2026-07-05T11:48:25.336Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:48:25.387Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:48:25.523Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:48:35.758Z] [INFO] [Print Server] Job queued: job-1783252115750-orn3lymbt → KITCHEN
+[2026-07-05T11:48:35.762Z] [INFO] [Print Server] Printing job job-1783252115750-orn3lymbt → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:48:36.491Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:48:36.688Z] [ERROR] [Print Server] Attempt 1 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:48:37.692Z] [INFO] [Print Server] Printing job job-1783252115750-orn3lymbt → USB "Kitcken" port "USB003" (attempt 2)
+[2026-07-05T11:48:38.278Z] [ERROR] [Print Server] Attempt 2 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:48:40.304Z] [INFO] [Print Server] Printing job job-1783252115750-orn3lymbt → USB "Kitcken" port "USB003" (attempt 3)
+[2026-07-05T11:48:40.894Z] [ERROR] [Print Server] Attempt 3 failed: rawprint.py failed: ERROR: (6, 'EndDocPrinter', 'The handle is invalid.')
+[2026-07-05T11:48:40.897Z] [ERROR] [Print Server] ✗ Job failed after 3 attempts: job-1783252115750-orn3lymbt
+[2026-07-05T11:58:05.253Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:58:05.293Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:58:05.378Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:58:15.377Z] [INFO] [Print Server] Job queued: job-1783252695374-zh263ljwi → KITCHEN
+[2026-07-05T11:58:15.380Z] [INFO] [Print Server] Printing job job-1783252695374-zh263ljwi → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:58:16.163Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:58:16.958Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T11:58:16.966Z] [INFO] [Print Server] ✓ Job completed: job-1783252695374-zh263ljwi
+[2026-07-05T11:58:34.076Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:58:34.158Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:58:34.210Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:58:58.571Z] [INFO] [Print Server] Job queued: job-1783252738569-455r8ycf2 → KITCHEN
+[2026-07-05T11:58:58.574Z] [INFO] [Print Server] Printing job job-1783252738569-455r8ycf2 → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:58:58.965Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:58:59.663Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T11:58:59.761Z] [INFO] [Print Server] ✓ Job completed: job-1783252738569-455r8ycf2
+[2026-07-05T11:59:20.601Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:59:20.678Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:59:20.728Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:59:32.030Z] [INFO] [Print Server] Job queued: job-1783252772010-46yi9hv9v → KITCHEN
+[2026-07-05T11:59:32.039Z] [INFO] [Print Server] Printing job job-1783252772010-46yi9hv9v → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:59:32.358Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:59:33.188Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T11:59:33.191Z] [INFO] [Print Server] ✓ Job completed: job-1783252772010-46yi9hv9v
+[2026-07-05T11:59:44.913Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:59:44.963Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:59:44.980Z] [INFO] [Print Server] Client connected
+[2026-07-05T11:59:47.781Z] [INFO] [Print Server] Job queued: job-1783252787774-5d2u1o17s → BILL
+[2026-07-05T11:59:47.843Z] [INFO] [Print Server] Printing job job-1783252787774-5d2u1o17s → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T11:59:48.641Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T11:59:48.996Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T11:59:49.052Z] [INFO] [Print Server] ✓ Job completed: job-1783252787774-5d2u1o17s
+[2026-07-05T12:00:04.321Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:00:04.342Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:00:04.356Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:00:07.748Z] [INFO] [Print Server] Job queued: job-1783252807743-euriu75p9 → BILL
+[2026-07-05T12:00:07.794Z] [INFO] [Print Server] Printing job job-1783252807743-euriu75p9 → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:00:08.558Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:00:09.226Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:00:09.437Z] [INFO] [Print Server] ✓ Job completed: job-1783252807743-euriu75p9
+[2026-07-05T12:03:16.204Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:03:16.252Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:03:16.260Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:03:31.448Z] [INFO] [Print Server] Job queued: job-1783253011446-y8ybs3pei → KITCHEN
+[2026-07-05T12:03:31.452Z] [INFO] [Print Server] Printing job job-1783253011446-y8ybs3pei → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:03:31.582Z] [INFO] [Print Server] Job queued: job-1783253011448-fyxp1416y → BAR
+[2026-07-05T12:03:31.586Z] [INFO] [Print Server] Printing job job-1783253011448-fyxp1416y → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:03:31.974Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:03:32.805Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:03:32.844Z] [INFO] [Print Server] ✓ Job completed: job-1783253011446-y8ybs3pei
+[2026-07-05T12:03:32.878Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:03:32.891Z] [INFO] [Print Server] ✓ Job completed: job-1783253011448-fyxp1416y
+[2026-07-05T12:03:45.101Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:03:45.124Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:03:45.134Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:04:14.172Z] [INFO] [Print Server] Job queued: job-1783253054170-75u7jlviu → KITCHEN
+[2026-07-05T12:04:14.180Z] [INFO] [Print Server] Printing job job-1783253054170-75u7jlviu → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:04:14.377Z] [INFO] [Print Server] Job queued: job-1783253054171-qao068jah → BAR
+[2026-07-05T12:04:14.402Z] [INFO] [Print Server] Printing job job-1783253054171-qao068jah → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:04:14.821Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:04:15.554Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:04:15.601Z] [INFO] [Print Server] ✓ Job completed: job-1783253054170-75u7jlviu
+[2026-07-05T12:04:15.631Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:04:15.634Z] [INFO] [Print Server] ✓ Job completed: job-1783253054171-qao068jah
+[2026-07-05T12:08:23.843Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:08:23.846Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:08:24.061Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:08:27.823Z] [INFO] [Print Server] Job queued: job-1783253307817-361ki9til → BILL
+[2026-07-05T12:08:27.825Z] [INFO] [Print Server] Printing job job-1783253307817-361ki9til → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:08:28.628Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:08:28.636Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:08:28.730Z] [INFO] [Print Server] ✓ Job completed: job-1783253307817-361ki9til
+[2026-07-05T12:08:59.268Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:08:59.340Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:08:59.401Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:09:01.581Z] [INFO] [Print Server] Job queued: job-1783253341557-28164mn0z → BILL
+[2026-07-05T12:09:01.583Z] [INFO] [Print Server] Printing job job-1783253341557-28164mn0z → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:09:02.252Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:09:02.547Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:09:02.613Z] [INFO] [Print Server] ✓ Job completed: job-1783253341557-28164mn0z
+[2026-07-05T12:21:44.436Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:21:44.488Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:21:44.655Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:21:50.946Z] [INFO] [Print Server] Job queued: job-1783254110944-32fxe1a35 → BILL
+[2026-07-05T12:21:50.948Z] [INFO] [Print Server] Printing job job-1783254110944-32fxe1a35 → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:21:51.468Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:21:51.470Z] [INFO] [Print Server] ✓ Job completed: job-1783254110944-32fxe1a35
+[2026-07-05T12:21:51.703Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:22:00.625Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:22:00.645Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:22:00.657Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:22:10.776Z] [INFO] [Print Server] Job queued: job-1783254130775-tzvqyhpqs → KITCHEN
+[2026-07-05T12:22:10.782Z] [INFO] [Print Server] Printing job job-1783254130775-tzvqyhpqs → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:22:11.182Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:22:11.184Z] [INFO] [Print Server] ✓ Job completed: job-1783254130775-tzvqyhpqs
+[2026-07-05T12:22:11.511Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:23:37.043Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:23:55.181Z] [INFO] [Print Server] Job queued: job-1783254249044-cwygychq1 → KITCHEN
+[2026-07-05T12:23:55.192Z] [INFO] [Print Server] Printing job job-1783254249044-cwygychq1 → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:23:55.654Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:23:55.655Z] [INFO] [Print Server] ✓ Job completed: job-1783254249044-cwygychq1
+[2026-07-05T12:23:55.998Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:24:09.556Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:24:21.696Z] [INFO] [Print Server] Job queued: job-1783254275568-m9a21f3sy → KITCHEN
+[2026-07-05T12:24:21.699Z] [INFO] [Print Server] Printing job job-1783254275568-m9a21f3sy → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:24:21.806Z] [INFO] [Print Server] Job queued: job-1783254275571-yjrdauvmk → BAR
+[2026-07-05T12:24:21.812Z] [INFO] [Print Server] Printing job job-1783254275571-yjrdauvmk → USB "Kitcken" port "USB003" (attempt 1)
+[2026-07-05T12:24:22.195Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:24:22.197Z] [INFO] [Print Server] ✓ Job completed: job-1783254275568-m9a21f3sy
+[2026-07-05T12:24:22.253Z] [INFO] [Print Server] ✓ Raw ESC/POS sent to "Kitcken"
+[2026-07-05T12:24:22.254Z] [INFO] [Print Server] ✓ Job completed: job-1783254275571-yjrdauvmk
+[2026-07-05T12:24:22.515Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:25:00.585Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:25:42.922Z] [INFO] [Print Server] Client disconnected
+[2026-07-05T12:27:50.258Z] [INFO] [Print Server] Client connected
+[2026-07-05T12:28:06.627Z] [INFO] [Print Server] Client disconnected

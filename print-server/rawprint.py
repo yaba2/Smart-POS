@@ -20,7 +20,7 @@ def raw_print(printer_name, hex_data):
             win32print.WritePrinter(hPrinter, raw_bytes)
             win32print.EndPagePrinter(hPrinter)
         finally:
-            win32print.EndDocPrinter(hJob)
+            win32print.EndDocPrinter(hPrinter)
     finally:
         win32print.ClosePrinter(hPrinter)
 

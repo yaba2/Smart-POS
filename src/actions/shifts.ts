@@ -16,106 +16,90 @@ function todayRange() {
 export async function openShift(openingCash: number, shiftType: ShiftType) {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
+  try {
+    const anyOpenShift = await prisma.shift.findFirst({ where: { closedAt: null } });
+    if (anyOpenShift) return { success: true, shift: anyOpenShift, alreadyOpen: true };
 
-  // Check if ANY shift is currently open (system-wide, shared across all users)
-  const anyOpenShift = await prisma.shift.findFirst({
-    where: { closedAt: null },
-  });
-  if (anyOpenShift) {
-    return { success: true, shift: anyOpenShift, alreadyOpen: true };
-  }
+    const { start, end } = todayRange();
+    const todayShifts = await prisma.shift.findMany({
+      where: { openedAt: { gte: start, lte: end }, closedAt: { not: null } },
+    });
 
-  const { start, end } = todayRange();
+    const morningDone = todayShifts.some((s) => s.shiftType === "MORNING");
+    const eveningDone = todayShifts.some((s) => s.shiftType === "EVENING");
 
-  // Check which shifts are completed today
-  const todayShifts = await prisma.shift.findMany({
-    where: {
-      openedAt: { gte: start, lte: end },
-      closedAt: { not: null },
-    },
-  });
+    if (morningDone && eveningDone) {
+      const shift = await prisma.shift.create({
+        data: { userId: session.userId, openingCash, shiftType, notes: "Next day shift (both previous shifts completed)" },
+      });
+      revalidatePath("/pos/shift");
+      return { success: true, shift, nextDay: true };
+    }
 
-  const morningDone = todayShifts.some((s) => s.shiftType === "MORNING");
-  const eveningDone = todayShifts.some((s) => s.shiftType === "EVENING");
+    const doneToday = todayShifts.some((s) => s.shiftType === shiftType);
+    if (doneToday) {
+      return { error: `The ${shiftType.toLowerCase()} shift has already been completed today. Both shifts must be completed to start a new cycle.` };
+    }
 
-  // If BOTH shifts are done today, allow starting fresh (treat as next business day)
-  if (morningDone && eveningDone) {
-    // Allow opening requested shift type as first shift of next "cycle"
     const shift = await prisma.shift.create({
-      data: { userId: session.userId, openingCash, shiftType, notes: "Next day shift (both previous shifts completed)" },
+      data: { userId: session.userId, openingCash, shiftType },
     });
     revalidatePath("/pos/shift");
-    return { success: true, shift, nextDay: true };
+    return { success: true, shift };
+  } catch {
+    return { error: "Cannot reach server. You are offline." };
   }
-
-  // Block if this specific shift type was already done today
-  const doneToday = todayShifts.some((s) => s.shiftType === shiftType);
-  if (doneToday) {
-    return { error: `The ${shiftType.toLowerCase()} shift has already been completed today. Both shifts must be completed to start a new cycle.` };
-  }
-
-  // Create a shared shift - store the opener's userId but it's shared
-  const shift = await prisma.shift.create({
-    data: { userId: session.userId, openingCash, shiftType },
-  });
-  revalidatePath("/pos/shift");
-  return { success: true, shift };
 }
 
 export async function closeShift(closingCash: number, notes?: string) {
   const session = await getSession();
   if (!session.userId) return { error: "Not authenticated" };
+  try {
+    const shift = await prisma.shift.findFirst({ where: { closedAt: null }, orderBy: { openedAt: "desc" } });
+    if (!shift) return { error: "No open shift found" };
 
-  // Close ANY open shift (shared across all users)
-  const shift = await prisma.shift.findFirst({
-    where: { closedAt: null },
-    orderBy: { openedAt: "desc" },
-  });
-  if (!shift) return { error: "No open shift found" };
+    await prisma.order.deleteMany({ where: { status: "OPEN", orderItems: { none: {} } } });
 
-  // Auto-clean empty OPEN orders (shells created when clicking a table but nothing added)
-  await prisma.order.deleteMany({
-    where: { status: "OPEN", orderItems: { none: {} } },
-  });
+    const unclearedCount = await prisma.order.count({ where: { status: { in: ["SENT", "WAITING_PAYMENT"] } } });
+    const openWithItems = await prisma.order.count({ where: { status: "OPEN", orderItems: { some: {} } } });
+    const total = unclearedCount + openWithItems;
+    if (total > 0) {
+      return { error: `Cannot close shift: ${total} order(s) still have unpaid bills. Clear all bills first.` };
+    }
 
-  // Block close only if SENT or WAITING_PAYMENT orders remain, or OPEN orders with actual items
-  const unclearedCount = await prisma.order.count({
-    where: { status: { in: ["SENT", "WAITING_PAYMENT"] } },
-  });
-  const openWithItems = await prisma.order.count({
-    where: { status: "OPEN", orderItems: { some: {} } },
-  });
-  const total = unclearedCount + openWithItems;
-  if (total > 0) {
-    return {
-      error: `Cannot close shift: ${total} order(s) still have unpaid bills. Clear all bills first.`,
-    };
+    const closed = await prisma.shift.update({
+      where: { id: shift.id },
+      data: { closedAt: new Date(), closingCash, notes },
+    });
+    revalidatePath("/pos/shift");
+    return { success: true, shift: closed };
+  } catch {
+    return { error: "Cannot reach server. You are offline." };
   }
-
-  const closed = await prisma.shift.update({
-    where: { id: shift.id },
-    data: { closedAt: new Date(), closingCash, notes },
-  });
-
-  revalidatePath("/pos/shift");
-  return { success: true, shift: closed };
 }
 
 export async function getCurrentShift() {
-  // Return ANY open shift (shared across all users)
-  return prisma.shift.findFirst({
-    where: { closedAt: null },
-    orderBy: { openedAt: "desc" },
-  });
+  try {
+    return await prisma.shift.findFirst({
+      where: { closedAt: null },
+      orderBy: { openedAt: "desc" },
+    });
+  } catch {
+    return null;
+  }
 }
 
 // System-wide: any open shift = POS is unlocked for ALL users
 export async function getAnyOpenShift() {
-  return prisma.shift.findFirst({
-    where: { closedAt: null },
-    orderBy: { openedAt: "desc" },
-    include: { user: true },
-  });
+  try {
+    return await prisma.shift.findFirst({
+      where: { closedAt: null },
+      orderBy: { openedAt: "desc" },
+      include: { user: true },
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function getShiftReport(shiftId: string) {

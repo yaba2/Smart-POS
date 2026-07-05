@@ -326,7 +326,7 @@ export function StaysClient({ stays: initialStays, rooms, guests: initialGuests,
           </form>
         </DialogContent>
       </Dialog>
-      {confirmDialog && (
+      {confirmDialog ? (
         <ConfirmDialog
           open={confirmDialog.open}
           title={confirmDialog.title}
@@ -335,7 +335,7 @@ export function StaysClient({ stays: initialStays, rooms, guests: initialGuests,
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }

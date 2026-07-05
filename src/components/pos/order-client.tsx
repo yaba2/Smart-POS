@@ -42,6 +42,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePrinter } from "@/hooks/use-printer";
+import { useLocalMenu } from "@/hooks/use-local-menu";
+import { localDb } from "@/lib/local-db";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ModifierItemOption {
@@ -138,7 +140,8 @@ interface ReceiptSettings {
 }
 
 interface OrderClientProps {
-  order: Order;
+  order?: Order;
+  orderId: string;
   menu: Category[];
   currencySymbol: string;
   taxRate: number;
@@ -148,10 +151,69 @@ interface OrderClientProps {
   printServerIp?: string;
 }
 
-export function OrderClient({ order, menu, currencySymbol, taxRate, permissions, paymentMethods, receiptSettings, printServerIp }: OrderClientProps) {
+export function OrderClient({ order: serverOrder, orderId, menu, currencySymbol, taxRate, permissions, paymentMethods, receiptSettings, printServerIp }: OrderClientProps) {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState(menu[0]?.id || "");
-  const [orderItems, setOrderItems] = useState<OrderItem[]>(order.orderItems);
+
+  // When server couldn't reach DB (offline), load order from IndexedDB
+  const [localOrder, setLocalOrder] = useState<Order | null>(serverOrder ?? null);
+  const loadedFromCache = useRef(false);
+  useEffect(() => {
+    if (localOrder || loadedFromCache.current) return;
+    loadedFromCache.current = true;
+    (async () => {
+      const cached = await localDb.orders.get(orderId);
+      if (!cached) return;
+      const cachedItems = await localDb.orderItems.where("orderId").equals(orderId).toArray();
+      const menuItemIds = Array.from(new Set(cachedItems.map((i) => i.menuItemId)));
+      const menuItemRows = await localDb.menuItems.bulkGet(menuItemIds);
+      const menuItemMap = new Map(menuItemRows.filter(Boolean).map((m) => [m!.id, m!]));
+      const catIds = Array.from(new Set(menuItemRows.filter(Boolean).map((m) => m!.categoryId)));
+      const catRows = await localDb.categories.bulkGet(catIds);
+      const catMap = new Map(catRows.filter(Boolean).map((c) => [c!.id, c!]));
+      const order: Order = {
+        id: cached.id,
+        status: cached.status,
+        total: cached.total,
+        paidAmount: cached.paidAmount,
+        sentAt: cached.sentAt ? new Date(cached.sentAt) : null,
+        table: { id: cached.tableId, name: "Table" },
+        waiter: { name: "", id: cached.waiterId },
+        orderItems: cachedItems.map((oi) => {
+          const mi = menuItemMap.get(oi.menuItemId);
+          const cat = mi ? catMap.get(mi.categoryId) : undefined;
+          return {
+            id: oi.id,
+            menuItemId: oi.menuItemId,
+            quantity: oi.quantity,
+            price: oi.price,
+            notes: oi.notes,
+            options: oi.options,
+            menuItem: {
+              id: oi.menuItemId,
+              name: mi?.name ?? "Unknown",
+              price: oi.price,
+              description: mi?.description ?? null,
+              image: mi?.image ?? null,
+              available: mi?.available ?? true,
+              category: { name: cat?.name ?? "", printer: cat?.printer ?? null },
+            },
+          };
+        }),
+      };
+      setLocalOrder(order);
+      setOrderItems(order.orderItems);
+      setOrderStatus(order.status);
+      setLivePaidAmount(order.paidAmount);
+    })();
+  }, [orderId, localOrder]);
+
+  const order = localOrder;
+
+  // Use local cached menu as primary source; server menu is the initial fallback
+  const localMenu = useLocalMenu(menu);
+  const displayMenu = localMenu.length > 0 ? localMenu : menu;
+  const [selectedCategory, setSelectedCategory] = useState(displayMenu[0]?.id || "");
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(order?.orderItems ?? []);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -163,12 +225,12 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [customersLoading, setCustomersLoading] = useState(false);
-  const [orderStatus, setOrderStatus] = useState(order.status);
-  const [livePaidAmount, setLivePaidAmount] = useState(order.paidAmount);
+  const [orderStatus, setOrderStatus] = useState(order?.status ?? "OPEN");
+  const [livePaidAmount, setLivePaidAmount] = useState(order?.paidAmount ?? 0);
 
   // IDs of items that were already sent to kitchen when this page loaded
   const [sentItemIds] = useState<Set<string>>(
-    () => new Set(order.status !== "OPEN" ? order.orderItems.map((i) => i.id) : [])
+    () => new Set(order && order.status !== "OPEN" ? order.orderItems.map((i) => i.id) : [])
   );
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   // Confirm dialog
@@ -214,12 +276,12 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
 
   useEffect(() => {
     if (orderStatus !== "SENT" && orderStatus !== "WAITING_PAYMENT") return;
-    const base = order.sentAt ? new Date(order.sentAt).getTime() : Date.now();
+    const base = order?.sentAt ? new Date(order.sentAt).getTime() : Date.now();
     const tick = () => setElapsedSec(Math.floor((Date.now() - base) / 1000));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [orderStatus, order.sentAt]);
+  }, [orderStatus, order?.sentAt]);
 
   const canSettle = permissions.includes("SETTLE_BILL");
   const canCancel = permissions.includes("CANCEL_ORDER");
@@ -231,11 +293,11 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
 
   // Allow adding items as long as order is not completed/cancelled
   const isLocked = orderStatus === "COMPLETED" || orderStatus === "CANCELLED";
-  const currentCategory = menu.find((c) => c.id === selectedCategory);
+  const currentCategory = displayMenu.find((c) => c.id === selectedCategory);
 
   // Get all modifier groups for a menu item (item-level + category-level, deduplicated)
   const getItemModifierGroups = (item: MenuItem): ModifierGroupData[] => {
-    const category = menu.find((c) => c.items.some((i) => i.id === item.id));
+    const category = displayMenu.find((c) => c.items.some((i) => i.id === item.id));
     const seen = new Set<string>();
     const groups: ModifierGroupData[] = [];
     for (const mg of (item.modifierGroups ?? [])) {
@@ -314,12 +376,12 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
 
     try {
-      const result = await addItemToOrder(order.id, item.id, 1, undefined, optionsJson, optionsJson ? item.price : undefined);
+      const result = await addItemToOrder(orderId, item.id, 1, undefined, optionsJson, optionsJson ? item.price : undefined);
       if ("error" in result) {
         setOrderItems(prev);
         toast({ title: String(result.error), variant: "destructive" });
       } else {
-        const response = await fetch(`/api/orders/${order.id}/items`);
+        const response = await fetch(`/api/orders/${orderId}/items`);
         if (response.ok) {
           const data: OrderItem[] = await response.json();
           setOrderItems(data);
@@ -408,7 +470,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const handleSendOrder = async () => {
     setActionLoading("send");
     try {
-      const result = await sendOrder(order.id);
+      const result = await sendOrder(orderId);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -427,13 +489,13 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             item => item.menuItem.category?.printer === "BAR"
           );
 
-          // Print kitchen tickets
+          // Print kitchen ticket
           if (kitchenItems.length > 0) {
             try {
               await printer.printKitchen({
-                orderId: order.id,
-                tableName: order.table.name,
-                waiterName: order.waiter.name,
+                orderId: orderId,
+                tableName: order?.table.name ?? "",
+                waiterName: order?.waiter.name ?? "",
                 category: "KITCHEN",
                 items: kitchenItems.map(item => {
                   const modifiers: string[] = [];
@@ -458,13 +520,13 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             }
           }
 
-          // Print bar tickets
+          // Print bar ticket separately
           if (barItems.length > 0) {
             try {
               await printer.printBar({
-                orderId: order.id,
-                tableName: order.table.name,
-                waiterName: order.waiter.name,
+                orderId: orderId,
+                tableName: order?.table.name ?? "",
+                waiterName: order?.waiter.name ?? "",
                 category: "BAR",
                 items: barItems.map(item => {
                   const modifiers: string[] = [];
@@ -512,7 +574,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
   const handlePrintBill = async () => {
     setActionLoading("print");
     try {
-      const result = await printBill(order.id);
+      const result = await printBill(orderId);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -525,9 +587,9 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             const tax = subtotal * (taxRate / 100);
             const total = subtotal + tax;
             await printer.printReceipt({
-              orderId: order.id,
-              tableName: order.table.name,
-              waiterName: order.waiter.name,
+              orderId: orderId,
+              tableName: order?.table.name ?? "",
+              waiterName: order?.waiter.name ?? "",
               restaurantName: receiptSettings?.restaurantName || "Restaurant",
               restaurantAddress: receiptSettings?.address,
               restaurantPhone: receiptSettings?.phone,
@@ -581,7 +643,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("payment");
     try {
-      const result = await completePayment(order.id, selectedPayment, customerName.trim() || undefined, selectedCustomerId || undefined);
+      const result = await completePayment(orderId, selectedPayment, customerName.trim() || undefined, selectedCustomerId || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -611,7 +673,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     setConfirmDialog(null);
     setActionLoading("cancel");
     try {
-      await cancelOrder(order.id);
+      await cancelOrder(orderId);
       toast({ title: "Order cancelled" });
       router.push("/pos/tables");
     } finally {
@@ -653,7 +715,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("split-print");
     try {
-      const result = await splitBill(order.id, Array.from(selectedItems), order.waiter.id, "print");
+      const result = await splitBill(orderId, Array.from(selectedItems), order?.waiter.id ?? "", "print");
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -684,9 +746,9 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     setActionLoading("split-settle");
     try {
       const result = await splitBill(
-        order.id,
+        orderId,
         Array.from(selectedItems),
-        order.waiter.id,
+        order?.waiter.id ?? "",
         "settle",
         selectedPayment,
         customerName.trim() || undefined,
@@ -724,7 +786,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
     setActionLoading("partial");
     try {
-      const result = await recordPartialPayment(order.id, selectedPayment, amount, customerName.trim() || undefined, selectedCustomerId || undefined);
+      const result = await recordPartialPayment(orderId, selectedPayment, amount, customerName.trim() || undefined, selectedCustomerId || undefined);
       if ("error" in result) {
         toast({ title: String(result.error), variant: "destructive" });
       } else {
@@ -745,6 +807,36 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
     }
   };
 
+  // While loading from IndexedDB, show a spinner
+  if (!order && !loadedFromCache.current) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-57px)] text-gray-400">
+        <div className="text-center space-y-2">
+          <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm">Loading order…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If still no order after trying cache, show a fallback
+  if (!order) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-57px)] text-gray-400">
+        <div className="text-center space-y-3">
+          <p className="text-lg font-medium">Order not found</p>
+          <p className="text-sm">This order may not be cached yet. Connect to the internet to load it.</p>
+          <button
+            onClick={() => router.push("/pos/tables")}
+            className="mt-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600"
+          >
+            Back to Tables
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100vh-57px)] overflow-hidden">
       {/* LEFT: Menu Panel */}
@@ -759,7 +851,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             <span className="text-sm font-medium">Tables</span>
           </button>
           <ChevronRight className="w-3 h-3 text-gray-300" />
-          <span className="text-sm font-semibold text-gray-800">{order.table.name}</span>
+          <span className="text-sm font-semibold text-gray-800">{order?.table.name ?? "Order"}</span>
           <Badge
             variant={orderStatus === "OPEN" ? "warning" : orderStatus === "SENT" ? "info" : "success"}
             className="ml-auto"
@@ -770,7 +862,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
 
         {/* Category Tabs */}
         <div className="flex gap-1 overflow-x-auto px-3 py-2 border-b border-gray-100 scrollbar-hide">
-          {menu.map((cat) => (
+          {displayMenu.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
@@ -790,7 +882,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
         <div className="flex-1 overflow-y-auto p-3 pb-24 md:pb-3">
           {isLocked && (
             <div className="mb-3 px-3 py-2 bg-gray-100 rounded-xl text-xs text-gray-500 text-center">
-              Order is {order.status.toLowerCase()} — no more items can be added
+              Order is {order?.status.toLowerCase() ?? "locked"} — no more items can be added
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
@@ -838,7 +930,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-orange-500" />
               <span className="font-semibold text-gray-800">Order</span>
-              <span className="text-xs text-gray-400">#{order.id.slice(-6)}</span>
+              <span className="text-xs text-gray-400">#{orderId.slice(-6)}</span>
             </div>
             <div className="flex items-center gap-2">
               {(orderStatus === "SENT" || orderStatus === "WAITING_PAYMENT") && (
@@ -846,7 +938,7 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
                   <Clock className="w-3 h-3" />{fmtElapsed(elapsedSec)}
                 </span>
               )}
-              <span className="text-xs text-gray-500">Waiter: {order.waiter.name}</span>
+              <span className="text-xs text-gray-500">Waiter: {order?.waiter.name ?? ""}</span>
             </div>
           </div>
         </div>
@@ -1199,8 +1291,8 @@ export function OrderClient({ order, menu, currencySymbol, taxRate, permissions,
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-orange-500" />
-                <span className="font-bold text-gray-900">Order #{order.id.slice(-6)}</span>
-                <span className="text-xs text-gray-400">{order.table.name}</span>
+                <span className="font-bold text-gray-900">Order #{orderId.slice(-6)}</span>
+                <span className="text-xs text-gray-400">{order?.table.name ?? ""}</span>
               </div>
               <button onClick={() => setShowMobileCart(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />

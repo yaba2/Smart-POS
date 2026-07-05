@@ -11,21 +11,36 @@ export default async function ShiftPage() {
     redirect("/pos/tables");
   }
 
-  const [currentShift, myShifts, settings, todayStatus] = await Promise.all([
-    getCurrentShift(),
-    getMyShifts(),
-    getSettings(),
-    getTodayShiftStatus(),
-  ]);
+  let currentShift: Awaited<ReturnType<typeof getCurrentShift>> = null;
+  let myShifts: Awaited<ReturnType<typeof getMyShifts>> = [];
+  let currencySymbol = "$";
+  let morningDone = false;
+  let eveningDone = false;
+
+  try {
+    const [cs, ms, settings, todayStatus] = await Promise.all([
+      getCurrentShift(),
+      getMyShifts(),
+      getSettings(),
+      getTodayShiftStatus(),
+    ]);
+    currentShift = cs;
+    myShifts = ms;
+    currencySymbol = settings.currencySymbol;
+    morningDone = todayStatus.morning;
+    eveningDone = todayStatus.evening;
+  } catch {
+    // DB unreachable (offline)
+  }
 
   return (
     <ShiftClient
       currentShift={currentShift}
       shifts={myShifts}
-      currencySymbol={settings.currencySymbol}
+      currencySymbol={currencySymbol}
       userName={session.name || ""}
-      morningDone={todayStatus.morning}
-      eveningDone={todayStatus.evening}
+      morningDone={morningDone}
+      eveningDone={eveningDone}
     />
   );
 }

@@ -6,6 +6,8 @@ import Image from "next/image";
 import { loginWithPin } from "@/actions/auth";
 import { toast } from "@/components/ui/use-toast";
 import { Delete, UtensilsCrossed, MapPin, Phone } from "lucide-react";
+import { localDb } from "@/lib/local-db";
+import { syncPos } from "@/hooks/use-pos-sync";
 
 interface PosLoginClientProps {
   restaurantName: string;
@@ -25,6 +27,44 @@ export function PosLoginClient({ restaurantName, logo, address, phone }: PosLogi
 
   const handleDelete = () => setPin((prev) => prev.slice(0, -1));
 
+  const doOfflineLogin = async (pinValue: string) => {
+    const cachedUser = await localDb.users
+      .filter((u) => u.pin === pinValue && u.active)
+      .first();
+
+    if (!cachedUser) {
+      toast({
+        title: "Invalid PIN",
+        description: "You're offline and this PIN has not been cached yet. Connect to the internet and log in once to enable offline access.",
+        variant: "destructive",
+      });
+      setPin("");
+      return false;
+    }
+
+    const res = await fetch("/api/auth/offline-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: cachedUser.id,
+        name: cachedUser.name,
+        role: cachedUser.role,
+        permissions: cachedUser.permissions,
+      }),
+    });
+
+    if (!res.ok) {
+      toast({ title: "Offline login failed", variant: "destructive" });
+      setPin("");
+      return false;
+    }
+
+    toast({ title: `Welcome, ${cachedUser.name}! (offline mode)` });
+    router.push("/pos/tables");
+    router.refresh();
+    return true;
+  };
+
   const handleLogin = async () => {
     if (pin.length !== 4) {
       toast({ title: "Enter 4-digit PIN", variant: "destructive" });
@@ -32,12 +72,27 @@ export function PosLoginClient({ restaurantName, logo, address, phone }: PosLogi
     }
     setLoading(true);
     try {
+      // If browser is already offline, skip the server action entirely
+      if (!navigator.onLine) {
+        await doOfflineLogin(pin);
+        return;
+      }
+
       const result = await loginWithPin(pin);
-      if (result.error) {
+
+      if ("offline" in result && result.offline) {
+        // Server action returned offline signal (DB timeout) — try cache
+        await doOfflineLogin(pin);
+        return;
+      }
+
+      if ("error" in result && result.error) {
         toast({ title: result.error, variant: "destructive" });
         setPin("");
-      } else {
+      } else if ("success" in result) {
         toast({ title: `Welcome, ${result.name}!` });
+        // Seed the local cache immediately so offline login works next time
+        syncPos().catch(() => {});
         router.push("/pos/tables");
         router.refresh();
       }

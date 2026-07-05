@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TableStatus } from "@prisma/client";
 import { createOrder, mergeOrders } from "@/actions/orders";
@@ -11,6 +11,9 @@ import { RefreshCw, Users, CreditCard, Utensils, Lock, X, Merge, ChevronRight, S
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useLocalTables } from "@/hooks/use-local-tables";
+import { useLiveQuery } from "dexie-react-hooks";
+import { localDb } from "@/lib/local-db";
 
 interface OrderItem {
   id: string;
@@ -89,19 +92,22 @@ export function TablesClient({ tables, waiterId, hasOpenShift, openedByName, can
   // Multi-order picker modal
   const [pickerTable, setPickerTable] = useState<TableWithOrders | null>(null);
 
+  // Use local cached tables as primary source; server data is the initial fallback
+  const localTables = useLocalTables(tables);
+  const displayTables = (localTables as TableWithOrders[]) || tables;
+
   // Derive unique floor names from tables
-  const floors = Array.from(new Set(tables.map((t) => t.floor).filter(Boolean))) as string[];
-  const visibleTables = activeFloor ? tables.filter((t) => t.floor === activeFloor) : tables;
+  const floors = Array.from(new Set(displayTables.map((t) => t.floor).filter(Boolean))) as string[];
+  const visibleTables = activeFloor ? displayTables.filter((t) => t.floor === activeFloor) : displayTables;
 
-  // Auto-refresh every 30 seconds so status updates appear on all screens
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [router]);
+  // Check for an open shift in IndexedDB — used as fallback when server couldn't be reached
+  const cachedOpenShift = useLiveQuery(
+    () => localDb.shifts.filter((s) => s.closedAt === null).first(),
+    []
+  );
+  const effectiveHasShift = hasOpenShift || !!cachedOpenShift;
 
-  const shiftLocked = !hasOpenShift && !canBypassShift;
+  const shiftLocked = !effectiveHasShift && !canBypassShift;
 
   const handleTableClick = async (table: TableWithOrders) => {
     if (shiftLocked) {

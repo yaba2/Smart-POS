@@ -48,30 +48,35 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
 };
 
 export async function loginWithPin(pin: string) {
-  const user = await prisma.user.findFirst({
-    where: { pin, active: true, role: { in: ["WAITER", "CASHIER", "MANAGER", "SUPERVISOR"] } },
-  });
+  try {
+    const user = await prisma.user.findFirst({
+      where: { pin, active: true, role: { in: ["WAITER", "CASHIER", "MANAGER", "SUPERVISOR"] } },
+    });
 
-  if (!user) {
-    return { error: "Invalid PIN code" };
+    if (!user) {
+      return { error: "Invalid PIN code" };
+    }
+
+    // Use stored permissions as the exact source of truth.
+    // If no permissions stored yet (new user), fall back to role defaults.
+    const userPerms = user.permissions as string[];
+    const permissions = userPerms.length > 0
+      ? userPerms
+      : (DEFAULT_PERMISSIONS[user.role] || []);
+
+    const session = await getSession();
+    session.userId = user.id;
+    session.name = user.name;
+    session.role = user.role as "ADMIN" | "MANAGER" | "SUPERVISOR" | "CASHIER" | "WAITER";
+    session.permissions = permissions;
+    session.isLoggedIn = true;
+    await session.save();
+
+    return { success: true, name: user.name, role: user.role };
+  } catch {
+    // DB unreachable — signal the client to do an offline PIN check
+    return { offline: true as const };
   }
-
-  // Use stored permissions as the exact source of truth.
-  // If no permissions stored yet (new user), fall back to role defaults.
-  const userPerms = user.permissions as string[];
-  const permissions = userPerms.length > 0
-    ? userPerms
-    : (DEFAULT_PERMISSIONS[user.role] || []);
-
-  const session = await getSession();
-  session.userId = user.id;
-  session.name = user.name;
-  session.role = user.role as "ADMIN" | "MANAGER" | "SUPERVISOR" | "CASHIER" | "WAITER";
-  session.permissions = permissions;
-  session.isLoggedIn = true;
-  await session.save();
-
-  return { success: true, name: user.name, role: user.role };
 }
 
 export async function loginAdmin(username: string, password: string) {
